@@ -8,18 +8,23 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 description = """
-ChimichangApp API helps you do awesome stuff. 🚀
+SmartArena API
 
 ## Items
+Base url: `https://smartarena-bbff190dd374.herokuapp.com`
 
-You can **read items**.
+You can do **CRUD** operation with orders/stadiums.
 
 ## Users
 
-You will be able to:
+* **Create profile**.
+* **Add stadium** .
+* **Order stadiums** .
 
-* **Create users** (_not implemented_).
-* **Read users** (_not implemented_).
+## Admin/Staff
+
+* **ALL**.
+
 """
 
 html = """
