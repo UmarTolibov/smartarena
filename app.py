@@ -9,7 +9,7 @@ from sqladmin import Admin
 
 from config import BASE_DIR
 from routers import auth_router, order_router, stadium_router
-from websocket import get, websocket_endpoint
+# from websocket import get, websocket_endpoint
 from database import engine
 
 app = FastAPI()
@@ -17,8 +17,8 @@ app.mount('/statics/', StaticFiles(directory=BASE_DIR + '/statics/'), name='stat
 app.include_router(auth_router)
 app.include_router(order_router)
 app.include_router(stadium_router)
-app.add_api_route("/chat", get, include_in_schema=False)
-app.add_websocket_route('/ws', websocket_endpoint)
+# app.add_api_route("/chat", get, include_in_schema=False)
+# app.add_websocket_route('/ws', websocket_endpoint)
 
 admin = Admin(app, engine=engine)
 
