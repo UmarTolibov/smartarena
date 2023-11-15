@@ -1,1 +1,6 @@
 /venv
+/statics
+admin.py
+Spacefile
+db.sqlite3
+.idea

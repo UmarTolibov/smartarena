@@ -1,27 +1,26 @@
 import inspect
 import re
 
-from fastapi import requests, FastAPI, routing, encoders, exceptions
+from fastapi import FastAPI, routing, encoders, exceptions
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-# from telebot.types import Update
 from sqladmin import Admin
 
-# from bot import bot, bot_meta
-from config import WEBHOOK_URL, TOKEN, BASE_DIR
+from config import BASE_DIR
 from routers import auth_router, order_router, stadium_router
 from websocket import get, websocket_endpoint
 from database import engine
 
 app = FastAPI()
-admin = Admin(app, engine=engine)
 app.mount('/statics/', StaticFiles(directory=BASE_DIR + '/statics/'), name='statics')
 app.include_router(auth_router)
 app.include_router(order_router)
 app.include_router(stadium_router)
 app.add_api_route("/chat", get, include_in_schema=False)
 app.add_websocket_route('/ws', websocket_endpoint)
+
+admin = Admin(app, engine=engine)
 
 
 @app.get("/", status_code=200, include_in_schema=False)
@@ -55,13 +54,13 @@ async def handle_exception(request, exc):
 #         await bot_meta()
 
 
-@app.post(f"/webhook/{TOKEN}/", include_in_schema=False)
-async def handle_telegram_message(request: requests.Request):
-    json_string = await request.body()
-    updates = Update.de_json(json_string.decode('utf-8'))
-    await bot.process_new_updates([updates])
-    return 'ok'
-
+# @app.post(f"/webhook/{TOKEN}/", include_in_schema=False)
+# async def handle_telegram_message(request: requests.Request):
+#     json_string = await request.body()
+#     updates = Update.de_json(json_string.decode('utf-8'))
+#     await bot.process_new_updates([updates])
+#     return 'ok'
+#
 
 def custom_openapi():
     if app.openapi_schema:
