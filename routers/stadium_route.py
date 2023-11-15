@@ -10,6 +10,24 @@ stadium_router = APIRouter(prefix="/stadium", tags=['Stadium'])
 
 @stadium_router.post('/')
 async def add_stadium(stadium: StadiumModel, authorize: AuthJWT = Depends(), db: AsyncSession = Depends(get_db)):
+    """
+            ## Add a stadium
+            This route is for adding stadiums.
+            ### Required:
+
+            ```- JWT  in header
+            "name": str,
+            "description": str,
+            "image": url,
+            "price": int,
+            "opening_time": str -"00:00:00",
+            "closing_time": str -"00:00:00",
+            "is_active": bool,
+            "region": str,
+            "district": str,
+            "location": str
+            ```
+        """
     try:
         authorize.jwt_required()
         subject = authorize.get_jwt_subject()
@@ -37,6 +55,24 @@ async def add_stadium(stadium: StadiumModel, authorize: AuthJWT = Depends(), db:
 @stadium_router.patch('/edit')
 async def edit_stadium(stadium: StadiumModel, s: int, authorize: AuthJWT = Depends(),
                        db: AsyncSession = Depends(get_db)):
+    """
+                ## Update a stadium info `Owner|admin only`
+                This route is for editing stadium.
+                ### Required:
+
+                ```- JWT  in header
+                "name": str,
+                "description": str,
+                "image": url,
+                "price": int,
+                "opening_time": str -"00:00:00",
+                "closing_time": str -"00:00:00",
+                "is_active": bool,
+                "region": str,
+                "district": str,
+                "location": str
+                ```
+    """
     try:
         authorize.jwt_required()
         subject = authorize.get_jwt_subject()
@@ -44,9 +80,10 @@ async def edit_stadium(stadium: StadiumModel, s: int, authorize: AuthJWT = Depen
         raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Please provide a valid token")
     user_query = select(User.id).where(or_(User.email == subject, User.username == subject))
     owner_id = (await db.execute(user_query)).scalar()
+    admin = (await db.execute(select(User.is_staff).where(or_(User.email == subject, User.username == subject)))).scalar()
     stadium_query = select(Stadium).where(and_(Stadium.id == s, Stadium.user_id == owner_id))
     stadium_exist = (await db.execute(stadium_query)).scalar()
-    if stadium_exist is None:
+    if stadium_exist is None or not admin:
         raise exceptions.HTTPException(status_code=401,
                                        detail="This actions are permitted to stadiums' owner only")
     else:
@@ -64,6 +101,14 @@ async def edit_stadium(stadium: StadiumModel, s: int, authorize: AuthJWT = Depen
 
 @stadium_router.get('/my')
 async def list_all_my_stadiums(authorize: AuthJWT = Depends(), db: AsyncSession = Depends(get_db)):
+    """
+                    ## Lists all stadium info of `Owner`
+                    This route is for retrieving stadiums.
+                    ### Required:
+
+                    ```- JWT  in header
+                    ```
+        """
     try:
         authorize.jwt_required()
         subject = authorize.get_jwt_subject()
@@ -79,6 +124,19 @@ async def list_all_my_stadiums(authorize: AuthJWT = Depends(), db: AsyncSession 
 @stadium_router.get('/')
 async def retrieve_or_get_all_stadium(s_id: int = 0, get_all: bool = False, authorize: AuthJWT = Depends(),
                                       db: AsyncSession = Depends(get_db)):
+
+    """
+                ## Get all or specific stadium info
+                This route is for `get`ting stadium(s)
+                ### Required:
+
+                ```- JWT  in header
+                "s_id": int = 0
+                ### or
+                "get_all": bool = False|0
+                ```
+    """
+
     try:
         authorize.jwt_required()
     except Exception as e:
@@ -97,6 +155,12 @@ async def retrieve_or_get_all_stadium(s_id: int = 0, get_all: bool = False, auth
 
 @stadium_router.delete('/delete')
 async def remove_stadium(s_id: int, authorize: AuthJWT = Depends(), db: AsyncSession = Depends(get_db)):
+    """
+    ## Delete stadium `owner` only
+    This route is for removing stadium from database
+    ### Required
+    - `s_id : int`
+    """
     try:
         authorize.jwt_required()
         subject = authorize.get_jwt_subject()
