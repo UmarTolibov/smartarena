@@ -5,15 +5,16 @@ from fastapi import FastAPI, routing, encoders, exceptions
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from sqladmin import Admin
 
-from config import BASE_DIR
+from config import BASE_DIR, description
 from routers import auth_router, order_router, stadium_router
 # from websocket import get, websocket_endpoint
 from database import engine
 
-app = FastAPI()
-app.mount('/statics/', StaticFiles(directory=BASE_DIR + '/statics/'), name='statics')
+app = FastAPI(title="SmartArena API", description=description, )
+app.mount('/static', StaticFiles(directory=BASE_DIR + '/statics/'), name='static')
 app.include_router(auth_router)
 app.include_router(order_router)
 app.include_router(stadium_router)
@@ -21,6 +22,23 @@ app.include_router(stadium_router)
 # app.add_websocket_route('/ws', websocket_endpoint)
 
 admin = Admin(app, engine=engine)
+
+# CORS
+
+# origins = [
+#     "http://localhost.tiangolo.com",
+#     "https://localhost.tiangolo.com",
+#     "http://localhost",
+#     "http://localhost:8080",
+# ]
+#
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=origins,
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 
 @app.get("/", status_code=200, include_in_schema=False)

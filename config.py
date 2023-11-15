@@ -6,6 +6,22 @@ WEBHOOK_URL = "https://fastapi123-1-v3433326.deta.app" + WEBHOOK_PATH
 SLI_TOKEN = "gnTHhoTY_GAgN29Beg49BRNybun9uwSqu9HFdYRF6"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+
+description = """
+ChimichangApp API helps you do awesome stuff. 🚀
+
+## Items
+
+You can **read items**.
+
+## Users
+
+You will be able to:
+
+* **Create users** (_not implemented_).
+* **Read users** (_not implemented_).
+"""
+
 html = """
 <!DOCTYPE html>
 <html>
