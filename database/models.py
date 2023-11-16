@@ -63,3 +63,5 @@ class Config(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     key: Mapped[str] = mapped_column(unique=True)
     value: Mapped[str] = mapped_column(unique=True)
+
+
