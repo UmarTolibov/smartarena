@@ -1,6 +1,6 @@
 import datetime
 from typing import Optional
-from pydantic import BaseModel, HttpUrl, EmailStr, constr, validator
+from pydantic import BaseModel, HttpUrl, EmailStr, constr
 
 
 class ProductImageSchema(BaseModel):
@@ -70,17 +70,6 @@ class SignUpModel(BaseModel):
     is_active: Optional[bool]
     email_var: Optional[int] = None
 
-    @validator('password')
-    def validate_password(cls, value):
-        # Custom password validation logic
-        if not any(char.isupper() for char in value):
-            raise ValueError('Password must contain at least one uppercase letter')
-
-        if not any(char.isdigit() for char in value):
-            raise ValueError('Password must contain at least one digit')
-
-        return value
-
     class Config:
         orm_mode = True
         schema_extra = {
@@ -100,23 +89,6 @@ class LogInModel(BaseModel):
     number: Optional[str] = None
     username: Optional[str] = None
     password: Optional[str]
-
-    @validator('password', pre=True, always=True)
-    def validate_password(cls, value):
-        if not value:
-            raise ValueError('Password is required')
-        return value
-
-    @validator('email', 'number', 'username', pre=True, always=True)
-    def validate_at_least_one_field(cls, values):
-        email = values.get('email')
-        number = values.get('number')
-        username = values.get('username')
-
-        if email is None and number is None and username is None:
-            raise ValueError('At least one of email, number, or username must be provided')
-
-        return values
 
 
 class Settings(BaseModel):
