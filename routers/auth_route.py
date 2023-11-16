@@ -209,12 +209,11 @@ async def reset_password(email: Email, db: AsyncSession = Depends(get_db)):
 @auth_router.get('/users')
 async def list_all_users(authorize: AuthJWT = Depends(), db: AsyncSession = Depends(get_db)):
     """
-                    ## Lists all users info of `Owner`
-                    This route is for retrieving stadiums.
-                    ### Required:
-
-                    ```- JWT  in header
-                    ```
+        ## Lists all users info of `Owner`
+        This route is for retrieving users info.
+        ### Required:
+            `admin` privlage
+             `JWT  in header`
         """
     try:
         authorize.jwt_required()
