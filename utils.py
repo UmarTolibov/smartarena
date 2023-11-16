@@ -14,9 +14,9 @@ async def send_email(user, email_var: bool = True):
     password = "rkxubwzmmbefmijf"
     try:
         message = f"""Your verification link:
-        http://localhost:8000/auth/verify/?e={user.email.replace('@', '%40')}&code={code}""" if email_var is True else \
+        https://smartarena-bbff190dd374.herokuapp.com/auth/verify/?e={user.email.replace('@', '%40')}&code={code}""" if email_var is True else \
             f"""Your link for resetting password:
-        http://localhost:8000/auth/change-password/?user={user.id}&c={code}"""
+        https://smartarena-bbff190dd374.herokuapp.com/auth/change-password/?user={user.id}&c={code}"""
     except AttributeError as e:
         raise HTTPException(status_code=404, detail=e)
     msg = EmailMessage()
