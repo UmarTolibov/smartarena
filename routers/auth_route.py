@@ -15,6 +15,7 @@ def get_config():
     return Settings()
 
 
+
 @auth_router.post('/signup', response_model=SignUpModel, status_code=status.HTTP_201_CREATED)
 async def signup(user_data: SignUpModel, db: AsyncSession = Depends(get_db)):
     """
@@ -204,3 +205,24 @@ async def reset_password(email: Email, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(user)
     return encoders.jsonable_encoder({"message": "email verification code for changing password has been sent"})
+
+
+@auth_router.get('/users')
+async def list_all_users(authorize: AuthJWT = Depends(), db: AsyncSession = Depends(get_db)):
+    """
+                    ## Lists all stadium info of `Owner`
+                    This route is for retrieving stadiums.
+                    ### Required:
+
+                    ```- JWT  in header
+                    ```
+        """
+    try:
+        authorize.jwt_required()
+        subject = authorize.get_jwt_subject()
+    except Exception as e:
+        raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Please provide a valid token")
+    user_query = select(User)
+    user = (await db.execute(user_query)).scalars()
+    response = encoders.jsonable_encoder({"user": [i for i in user.all()]})
+    return response
