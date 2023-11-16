@@ -30,18 +30,25 @@ async def order_stadium(order: OrderModel, authorize: AuthJWT = Depends(),
     except Exception:
         raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Please provide a valid token")
     user_query = select(User.id).where(or_(User.email == subject, User.username == subject))
-    stadium_query = select(exists().where(or_(Stadium.id == order.stadium_id)))
-    stadium_exist = (await db.execute(stadium_query)).scalar()
+    stadium_e_query = select(exists().where(or_(Stadium.id == order.stadium_id)))
+    stadium_exist = (await db.execute(stadium_e_query)).scalar()
     if stadium_exist is False:
         raise exceptions.HTTPException(status_code=400,
                                        detail="Stadium with this id doesn't exists or has been deleted")
-    user_id = (await db.execute(user_query)).scalar()
-    new_order = Order(status=order.status, user_id=user_id, stadium_id=order.stadium_id,
-                      start_time=order.start_time, hour=order.hour)
-    db.add(new_order)
-    await db.commit()
-    await db.refresh(new_order)
-    return encoders.jsonable_encoder({"order": order})
+    else:
+        user_id = (await db.execute(user_query)).scalar()
+        stadium_query = select(Stadium.number_of_orders).where(Stadium.id == order.stadium_id)
+        stadium_order_num = (await db.execute(stadium_query)).scalar() + 1
+        add_number_q = update(Stadium).where(Stadium.id == order.stadium_id).values(number_of_orders=stadium_order_num)
+
+        new_order = Order(status=order.status, user_id=user_id, stadium_id=order.stadium_id,
+                          start_time=order.start_time, hour=order.hour)
+
+        await db.execute(add_number_q)
+        db.add(new_order)
+        await db.commit()
+        await db.refresh(new_order)
+        return encoders.jsonable_encoder({"order": order})
 
 
 @order_router.patch('/edit/{order_id}')

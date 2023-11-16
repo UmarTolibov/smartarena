@@ -38,6 +38,7 @@ class Stadium(Base):
     location = Column(String)
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
     user = relationship(User, backref="stadiums")
+    number_of_orders = Column(Integer, default=0)
 
     def __repr__(self):
         return f"<Stadium {self.name}>"
@@ -63,5 +64,3 @@ class Config(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     key: Mapped[str] = mapped_column(unique=True)
     value: Mapped[str] = mapped_column(unique=True)
-
-
