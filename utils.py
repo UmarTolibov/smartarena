@@ -99,7 +99,7 @@ async def send_email(user, email_var: bool = True):
     except AttributeError as e:
         raise HTTPException(status_code=404, detail=e)
     msg = EmailMessage()
-    msg.set_content(message)
+    msg.add_alternative(message, subtype='html')
     msg['Subject'] = 'Email Verification'
     msg['From'] = sender_email
     msg['To'] = user.email
