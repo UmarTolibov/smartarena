@@ -13,7 +13,7 @@ from routers import auth_router, order_router, stadium_router
 # from websocket import get, websocket_endpoint
 from database import engine
 
-app = FastAPI(title="SmartArena API", description=description)
+app = FastAPI()
 app.mount('/static', StaticFiles(directory=BASE_DIR + '/statics/'), name='static')
 app.include_router(auth_router)
 app.include_router(order_router)
@@ -85,9 +85,9 @@ def custom_openapi():
         return app.openapi_schema
 
     openapi_schema = get_openapi(
-        title="API",
+        title="SmartArena API",
+        description=description,
         version="1.1",
-        description="An API template",
         routes=app.routes,
     )
 
