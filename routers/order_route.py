@@ -8,7 +8,7 @@ from utils import get_db
 order_router = APIRouter(prefix="/order", tags=['Ordering'])
 
 
-@order_router.post('/')
+@order_router.post('')
 async def order_stadium(order: OrderModel, authorize: AuthJWT = Depends(),
                         db: AsyncSession = Depends(get_db)):
     """
@@ -143,7 +143,7 @@ async def list_all_my_orders(authorize: AuthJWT = Depends(), db: AsyncSession = 
     return response
 
 
-@order_router.get('/')
+@order_router.get('')
 async def retrieve_or_get_all_orders(order_id: int = 0, get_all: bool = False, db: AsyncSession = Depends(get_db),
                                      authorize: AuthJWT = Depends()):
     """
