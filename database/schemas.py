@@ -62,10 +62,10 @@ class OrderModel(BaseModel):
 
 class SignUpModel(BaseModel):
     id: Optional[int]
-    username: constr(min_length=3, max_length=50)
+    username: constr(min_length=3)
     number: constr(regex=r"^\+998\d{9}$")
     email: EmailStr
-    password: constr(min_length=6, max_length=32)
+    password: constr(min_length=6)
     is_staff: Optional[bool]
     is_active: Optional[bool]
     email_var: Optional[int] = None
