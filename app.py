@@ -4,14 +4,14 @@ import re
 from fastapi import FastAPI, routing, encoders, exceptions
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
+# from fastapi.staticfiles import StaticFiles
 # from fastapi.middleware.cors import CORSMiddleware
 
 from config import BASE_DIR, description
 from routers import auth_router, order_router, stadium_router
 
 app = FastAPI()
-app.mount('/static', StaticFiles(directory=BASE_DIR + '/statics/'), name='static')
+# app.mount('/static', StaticFiles(directory=BASE_DIR + '/statics/'), name='static')
 app.include_router(auth_router)
 app.include_router(order_router)
 app.include_router(stadium_router)
