@@ -8,7 +8,7 @@ from utils import get_db
 stadium_router = APIRouter(prefix="/stadium", tags=['Stadium'])
 
 
-@stadium_router.post('/')
+@stadium_router.post('')
 async def add_stadium(stadium: StadiumModel, authorize: AuthJWT = Depends(), db: AsyncSession = Depends(get_db)):
     """
             ## Add a stadium
@@ -41,7 +41,8 @@ async def add_stadium(stadium: StadiumModel, authorize: AuthJWT = Depends(), db:
         new_stadium = Stadium(
             name=stadium.name, description=stadium.description, image_url=stadium.image_url, price=stadium.price,
             opening_time=stadium.opening_time, closing_time=stadium.closing_time, is_active=stadium.is_active,
-            region=stadium.region, district=stadium.district, location=stadium.location, user_id=owner_id
+            region=stadium.region, district=stadium.district, location=stadium.location, user_id=owner_id,
+            number_of_orders=0
         )
 
         db.add(new_stadium)
@@ -52,6 +53,9 @@ async def add_stadium(stadium: StadiumModel, authorize: AuthJWT = Depends(), db:
         except Exception as e:
             raise exceptions.HTTPException(detail=f"name of the stadium is already taken{e}",
                                            status_code=status.HTTP_400_BAD_REQUEST)
+    else:
+        raise exceptions.HTTPException(detail=f"Please activate your account",
+                                       status_code=status.HTTP_401_UNAUTHORIZED)
 
 
 @stadium_router.put('/edit')
@@ -129,7 +133,7 @@ async def list_all_my_stadiums(authorize: AuthJWT = Depends(), db: AsyncSession 
         raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Please activate your account")
 
 
-@stadium_router.get('/')
+@stadium_router.get('')
 async def retrieve_or_get_all_stadium(s_id: int = 0, get_all: bool = False, authorize: AuthJWT = Depends(),
                                       db: AsyncSession = Depends(get_db)):
     """
