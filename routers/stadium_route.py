@@ -32,7 +32,9 @@ async def add_stadium(stadium: StadiumModel, authorize: AuthJWT = Depends(), db:
         authorize.jwt_required()
         subject = authorize.get_jwt_subject()
     except Exception as e:
-        raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Please provide a valid token")
+        raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                       detail=f"Please provide a valid token\n{e}")
+
     user_query = select(User.id).where(or_(User.email == subject, User.username == subject))
     owner_id = (await db.execute(user_query)).scalar()
 
@@ -77,10 +79,12 @@ async def edit_stadium(stadium: StadiumModel, s: int, authorize: AuthJWT = Depen
         authorize.jwt_required()
         subject = authorize.get_jwt_subject()
     except Exception as e:
-        raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Please provide a valid token")
+        raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                       detail=f"Please provide a valid token\n{e}")
     user_query = select(User.id).where(or_(User.email == subject, User.username == subject))
     owner_id = (await db.execute(user_query)).scalar()
-    admin = (await db.execute(select(User.is_staff).where(or_(User.email == subject, User.username == subject)))).scalar()
+    admin = (
+        await db.execute(select(User.is_staff).where(or_(User.email == subject, User.username == subject)))).scalar()
     stadium_query = select(Stadium).where(and_(Stadium.id == s, Stadium.user_id == owner_id))
     stadium_exist = (await db.execute(stadium_query)).scalar()
     if stadium_exist is None or not admin:
@@ -113,7 +117,8 @@ async def list_all_my_stadiums(authorize: AuthJWT = Depends(), db: AsyncSession 
         authorize.jwt_required()
         subject = authorize.get_jwt_subject()
     except Exception as e:
-        raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Please provide a valid token")
+        raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                       detail=f"Please provide a valid token\n{e}")
     user_query = select(User).where(or_(User.email == subject, User.username == subject))
     user = (await db.execute(user_query)).scalar()
     stadiums = (await db.execute(select(Stadium).where(Stadium.user_id == user.id))).scalars()
@@ -124,7 +129,6 @@ async def list_all_my_stadiums(authorize: AuthJWT = Depends(), db: AsyncSession 
 @stadium_router.get('/')
 async def retrieve_or_get_all_stadium(s_id: int = 0, get_all: bool = False, authorize: AuthJWT = Depends(),
                                       db: AsyncSession = Depends(get_db)):
-
     """
                 ## Get all or specific stadium info
                 This route is for `get`ting stadium(s)
@@ -140,7 +144,8 @@ async def retrieve_or_get_all_stadium(s_id: int = 0, get_all: bool = False, auth
     try:
         authorize.jwt_required()
     except Exception as e:
-        raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Please provide a valid token")
+        raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                       detail=f"Please provide a valid token\n{e}")
     if get_all is True and s_id == 0:
         query = select(Stadium).where(Stadium.is_active)
         stadiums = (await db.execute(query)).scalars().all()
@@ -165,7 +170,8 @@ async def remove_stadium(s_id: int, authorize: AuthJWT = Depends(), db: AsyncSes
         authorize.jwt_required()
         subject = authorize.get_jwt_subject()
     except Exception as e:
-        raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Please provide a valid token")
+        raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                       detail=f"Please provide a valid token\n{e}")
     user_query = select(User.id).where(or_(User.email == subject, User.username == subject))
     owner_id = (await db.execute(user_query)).scalar()
     stadium_query = select(Stadium).where(and_(Stadium.id == s_id, Stadium.user_id == owner_id))

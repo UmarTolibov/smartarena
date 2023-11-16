@@ -212,15 +212,16 @@ async def list_all_users(authorize: AuthJWT = Depends(), db: AsyncSession = Depe
         ## Lists all users info of `Owner`
         This route is for retrieving users info.
         ### Required:
-            `admin` privlage
+            `admin` privilege
              `JWT  in header`
         """
     try:
         authorize.jwt_required()
         subject = authorize.get_jwt_subject()
     except Exception as e:
-        raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Please provide a valid token")
-    admin_query = select(User).where(or_(User.email == subject,User.username == subject,User.number == subject))
+        raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                       detail=f"Please provide a valid token{e}")
+    admin_query = select(User).where(or_(User.email == subject, User.username == subject, User.number == subject))
     admin = (await db.execute(admin_query)).scalar()
     if admin.is_staff:
         user_query = select(User)
@@ -229,4 +230,3 @@ async def list_all_users(authorize: AuthJWT = Depends(), db: AsyncSession = Depe
         return response
     else:
         raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="you have no permission")
-

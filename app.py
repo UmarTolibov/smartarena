@@ -5,23 +5,17 @@ from fastapi import FastAPI, routing, encoders, exceptions
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
-from sqladmin import Admin
+# from fastapi.middleware.cors import CORSMiddleware
 
 from config import BASE_DIR, description
 from routers import auth_router, order_router, stadium_router
-# from websocket import get, websocket_endpoint
-from database import engine
 
 app = FastAPI()
 app.mount('/static', StaticFiles(directory=BASE_DIR + '/statics/'), name='static')
 app.include_router(auth_router)
 app.include_router(order_router)
 app.include_router(stadium_router)
-# app.add_api_route("/chat", get, include_in_schema=False)
-# app.add_websocket_route('/ws', websocket_endpoint)
 
-admin = Admin(app, engine=engine)
 
 # CORS
 
@@ -63,22 +57,6 @@ async def handle_exception(request, exc):
         content={"message": "Internal Server Error"}
     )
 
-
-# @app.on_event("startup")
-# async def on_startup():
-#     webhook_info = await bot.get_webhook_info()
-#     if webhook_info.url != WEBHOOK_URL:
-#         await bot.set_webhook(url=WEBHOOK_URL)
-#         await bot_meta()
-
-
-# @app.post(f"/webhook/{TOKEN}/", include_in_schema=False)
-# async def handle_telegram_message(request: requests.Request):
-#     json_string = await request.body()
-#     updates = Update.de_json(json_string.decode('utf-8'))
-#     await bot.process_new_updates([updates])
-#     return 'ok'
-#
 
 def custom_openapi():
     if app.openapi_schema:
