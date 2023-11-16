@@ -1,6 +1,6 @@
 import datetime
 from typing import Optional
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, EmailStr, constr, validator
 
 
 class ProductImageSchema(BaseModel):
@@ -62,13 +62,24 @@ class OrderModel(BaseModel):
 
 class SignUpModel(BaseModel):
     id: Optional[int]
-    username: str
-    number: str
-    email: str
-    password: str
+    username: constr(min_length=3, max_length=50)
+    number: constr(regex=r"^\+998\d{9}$")
+    email: EmailStr
+    password: constr(min_length=6, max_length=32)
     is_staff: Optional[bool]
     is_active: Optional[bool]
     email_var: Optional[int] = None
+
+    @validator('password')
+    def validate_password(cls, value):
+        # Custom password validation logic
+        if not any(char.isupper() for char in value):
+            raise ValueError('Password must contain at least one uppercase letter')
+
+        if not any(char.isdigit() for char in value):
+            raise ValueError('Password must contain at least one digit')
+
+        return value
 
     class Config:
         orm_mode = True
@@ -78,7 +89,7 @@ class SignUpModel(BaseModel):
                 "number": "+9981234567",
                 "email": "a@gmail.com",
                 "password": "@#$%^&&&&&^%$",
-                "is_staff": True,
+                "is_staff": False,
                 "is_active": False
             }
         }
@@ -89,6 +100,23 @@ class LogInModel(BaseModel):
     number: Optional[str] = None
     username: Optional[str] = None
     password: Optional[str]
+
+    @validator('password', pre=True, always=True)
+    def validate_password(cls, value):
+        if not value:
+            raise ValueError('Password is required')
+        return value
+
+    @validator('email', 'number', 'username', pre=True, always=True)
+    def validate_at_least_one_field(cls, values):
+        email = values.get('email')
+        number = values.get('number')
+        username = values.get('username')
+
+        if email is None and number is None and username is None:
+            raise ValueError('At least one of email, number, or username must be provided')
+
+        return values
 
 
 class Settings(BaseModel):
