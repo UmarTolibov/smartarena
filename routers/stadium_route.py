@@ -52,7 +52,7 @@ async def add_stadium(stadium: StadiumModel, authorize: AuthJWT = Depends(), db:
                                        status_code=status.HTTP_400_BAD_REQUEST)
 
 
-@stadium_router.patch('/edit')
+@stadium_router.put('/edit')
 async def edit_stadium(stadium: StadiumModel, s: int, authorize: AuthJWT = Depends(),
                        db: AsyncSession = Depends(get_db)):
     """
