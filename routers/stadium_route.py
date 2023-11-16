@@ -41,8 +41,7 @@ async def add_stadium(stadium: StadiumModel, authorize: AuthJWT = Depends(), db:
         new_stadium = Stadium(
             name=stadium.name, description=stadium.description, image_url=stadium.image_url, price=stadium.price,
             opening_time=stadium.opening_time, closing_time=stadium.closing_time, is_active=stadium.is_active,
-            region=stadium.region, district=stadium.district, location=stadium.location, user_id=owner_id,
-            number_of_orders=0
+            region=stadium.region, district=stadium.district, location=stadium.location, user_id=owner_id
         )
 
         db.add(new_stadium)
