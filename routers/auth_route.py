@@ -143,7 +143,7 @@ async def verify_email(e: str = Query(..., max_length=50), code: int = None, db:
     return encoders.jsonable_encoder({"message": "verify your email by clicking the link we've sent"})
 
 
-@auth_router.patch('/change-password')
+@auth_router.put('/change-password')
 async def change_password(password_data: ChangePassword, c: int = None, user: int = None,
                           db: AsyncSession = Depends(get_db),
                           authorize: AuthJWT = Depends()):

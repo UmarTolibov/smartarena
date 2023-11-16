@@ -51,7 +51,7 @@ async def order_stadium(order: OrderModel, authorize: AuthJWT = Depends(),
         return encoders.jsonable_encoder({"order": order})
 
 
-@order_router.patch('/edit/{order_id}')
+@order_router.put('/edit/{order_id}')
 async def edit_order(order: OrderModel, order_id: int, authorize: AuthJWT = Depends(),
                      db: AsyncSession = Depends(get_db)):
     """
