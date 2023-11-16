@@ -34,24 +34,24 @@ async def add_stadium(stadium: StadiumModel, authorize: AuthJWT = Depends(), db:
     except Exception as e:
         raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                        detail=f"Please provide a valid token\n{e}")
+    user_query = select(User).where(or_(User.email == subject, User.username == subject, User.number == subject))
+    owner = (await db.execute(user_query)).scalar()
+    if owner.is_active:
+        owner_id = owner.id
+        new_stadium = Stadium(
+            name=stadium.name, description=stadium.description, image_url=stadium.image_url, price=stadium.price,
+            opening_time=stadium.opening_time, closing_time=stadium.closing_time, is_active=stadium.is_active,
+            region=stadium.region, district=stadium.district, location=stadium.location, user_id=owner_id
+        )
 
-    user_query = select(User.id).where(or_(User.email == subject, User.username == subject))
-    owner_id = (await db.execute(user_query)).scalar()
-
-    new_stadium = Stadium(
-        name=stadium.name, description=stadium.description, image_url=stadium.image_url, price=stadium.price,
-        opening_time=stadium.opening_time, closing_time=stadium.closing_time, is_active=stadium.is_active,
-        region=stadium.region, district=stadium.district, location=stadium.location, user_id=owner_id
-    )
-
-    db.add(new_stadium)
-    try:
-        await db.commit()
-        await db.refresh(new_stadium)
-        return encoders.jsonable_encoder({"stadium": new_stadium})
-    except Exception as e:
-        raise exceptions.HTTPException(detail=f"name of the stadium is already taken{e}",
-                                       status_code=status.HTTP_400_BAD_REQUEST)
+        db.add(new_stadium)
+        try:
+            await db.commit()
+            await db.refresh(new_stadium)
+            return encoders.jsonable_encoder({"stadium": new_stadium})
+        except Exception as e:
+            raise exceptions.HTTPException(detail=f"name of the stadium is already taken{e}",
+                                           status_code=status.HTTP_400_BAD_REQUEST)
 
 
 @stadium_router.put('/edit')
@@ -81,7 +81,7 @@ async def edit_stadium(stadium: StadiumModel, s: int, authorize: AuthJWT = Depen
     except Exception as e:
         raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                        detail=f"Please provide a valid token\n{e}")
-    user_query = select(User.id).where(or_(User.email == subject, User.username == subject))
+    user_query = select(User.id).where(or_(User.email == subject, User.username == subject, User.number == subject))
     owner_id = (await db.execute(user_query)).scalar()
     admin = (
         await db.execute(select(User.is_staff).where(or_(User.email == subject, User.username == subject)))).scalar()
@@ -119,11 +119,14 @@ async def list_all_my_stadiums(authorize: AuthJWT = Depends(), db: AsyncSession 
     except Exception as e:
         raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                        detail=f"Please provide a valid token\n{e}")
-    user_query = select(User).where(or_(User.email == subject, User.username == subject))
+    user_query = select(User).where(or_(User.email == subject, User.username == subject, User.number == subject))
     user = (await db.execute(user_query)).scalar()
-    stadiums = (await db.execute(select(Stadium).where(Stadium.user_id == user.id))).scalars()
-    response = encoders.jsonable_encoder({"stadiums": [i for i in stadiums.all()]})
-    return response
+    if user.is_active:
+        stadiums = (await db.execute(select(Stadium).where(Stadium.user_id == user.id))).scalars()
+        response = encoders.jsonable_encoder({"stadiums": [i for i in stadiums.all()]})
+        return response
+    else:
+        raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Please activate your account")
 
 
 @stadium_router.get('/')
@@ -143,19 +146,28 @@ async def retrieve_or_get_all_stadium(s_id: int = 0, get_all: bool = False, auth
 
     try:
         authorize.jwt_required()
+        subject = authorize.get_jwt_subject()
     except Exception as e:
         raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                        detail=f"Please provide a valid token\n{e}")
-    if get_all is True and s_id == 0:
-        query = select(Stadium).where(Stadium.is_active)
-        stadiums = (await db.execute(query)).scalars().all()
-        return encoders.jsonable_encoder(stadiums)
-    elif s_id != 0 and get_all is False:
-        query = select(Stadium).where(Stadium.id == s_id)
-        stadium = (await db.execute(query)).scalar()
-        return encoders.jsonable_encoder(stadium)
+    user_query = select(User.is_staff).where(
+        or_(User.email == subject, User.username == subject, User.number == subject))
+    user = (await db.execute(user_query)).scalar()
+    if user:
+        if get_all is True and s_id == 0:
+            query = select(Stadium).where(Stadium.is_active)
+            stadiums = (await db.execute(query)).scalars().all()
+            return encoders.jsonable_encoder(stadiums)
+        elif s_id != 0 and get_all is False:
+            query = select(Stadium).where(Stadium.id == s_id)
+            stadium = (await db.execute(query)).scalar()
+            return encoders.jsonable_encoder(stadium)
+        else:
+            raise exceptions.HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                           detail="Please use at least one query")
     else:
-        raise exceptions.HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Please use one query only")
+        raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                       detail="Please activate your account")
 
 
 @stadium_router.delete('/delete')
@@ -172,7 +184,7 @@ async def remove_stadium(s_id: int, authorize: AuthJWT = Depends(), db: AsyncSes
     except Exception as e:
         raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                        detail=f"Please provide a valid token\n{e}")
-    user_query = select(User.id).where(or_(User.email == subject, User.username == subject))
+    user_query = select(User.id).where(or_(User.email == subject, User.username == subject, User.number == subject))
     owner_id = (await db.execute(user_query)).scalar()
     stadium_query = select(Stadium).where(and_(Stadium.id == s_id, Stadium.user_id == owner_id))
     stadium = (await db.execute(stadium_query)).scalar()

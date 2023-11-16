@@ -29,19 +29,22 @@ async def order_stadium(order: OrderModel, authorize: AuthJWT = Depends(),
         subject = authorize.get_jwt_subject()
     except Exception:
         raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Please provide a valid token")
-    user_query = select(User.id).where(or_(User.email == subject, User.username == subject))
+    user_query = select(User).where(or_(User.email == subject, User.username == subject, User.number == subject))
     stadium_e_query = select(exists().where(or_(Stadium.id == order.stadium_id)))
     stadium_exist = (await db.execute(stadium_e_query)).scalar()
+    user = (await db.execute(user_query)).scalar()
     if stadium_exist is False:
         raise exceptions.HTTPException(status_code=400,
                                        detail="Stadium with this id doesn't exists or has been deleted")
+    elif not user.is_active:
+        raise exceptions.HTTPException(status_code=401,
+                                       detail="Please activate your account")
     else:
-        user_id = (await db.execute(user_query)).scalar()
         stadium_query = select(Stadium.number_of_orders).where(Stadium.id == order.stadium_id)
         stadium_order_num = (await db.execute(stadium_query)).scalar() + 1
         add_number_q = update(Stadium).where(Stadium.id == order.stadium_id).values(number_of_orders=stadium_order_num)
 
-        new_order = Order(status=order.status, user_id=user_id, stadium_id=order.stadium_id,
+        new_order = Order(status=order.status, user_id=user.id, stadium_id=order.stadium_id,
                           start_time=order.start_time, hour=order.hour)
 
         await db.execute(add_number_q)
@@ -77,7 +80,7 @@ async def edit_order(order: OrderModel, order_id: int, authorize: AuthJWT = Depe
         subject = authorize.get_jwt_subject()
     except Exception:
         raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Please provide a valid token")
-    user_query = select(User).where(or_(User.email == subject, User.username == subject))
+    user_query = select(User).where(or_(User.email == subject, User.username == subject, User.number == subject))
     user = (await db.execute(user_query)).scalar()
     query = select(Order).where(Order.id == order_id)
 
@@ -108,7 +111,7 @@ async def delete_order(order_id: int, authorize: AuthJWT = Depends(),
         subject = authorize.get_jwt_subject()
     except Exception:
         raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Please provide a valid token")
-    user_query = select(User).where(or_(User.email == subject, User.username == subject))
+    user_query = select(User).where(or_(User.email == subject, User.username == subject, User.number == subject))
     user = (await db.execute(user_query)).scalar()
     query = select(Order).where(and_(Order.id == order_id))
     order_exist = (await db.execute(query)).scalar()
@@ -134,13 +137,16 @@ async def list_all_my_orders(authorize: AuthJWT = Depends(), db: AsyncSession = 
         subject = authorize.get_jwt_subject()
     except Exception:
         raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Please provide a valid token")
-    user_query = select(User).where(or_(User.email == subject, User.username == subject))
+    user_query = select(User).where(or_(User.email == subject, User.username == subject, User.number == subject))
     user = (await db.execute(user_query)).scalar()
-    user_id: int = user.id
-    query = select(Order).where(Order.user_id == user_id)
-    stadiums = (await db.execute(query)).scalars()
-    response = encoders.jsonable_encoder({"stadiums": [i for i in stadiums.all()]})
-    return response
+    if user.is_active:
+        query = select(Order).where(Order.user_id == user.id)
+        stadiums = (await db.execute(query)).scalars()
+        response = encoders.jsonable_encoder({"stadiums": [i for i in stadiums.all()]})
+        return response
+    else:
+        raise exceptions.HTTPException(status_code=401,
+                                       detail="Please activate your account")
 
 
 @order_router.get('')
@@ -161,7 +167,7 @@ async def retrieve_or_get_all_orders(order_id: int = 0, get_all: bool = False, d
         subject = authorize.get_jwt_subject()
     except Exception:
         raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Please provide a valid token")
-    user_query = select(User).where(or_(User.email == subject, User.username == subject))
+    user_query = select(User).where(or_(User.email == subject, User.username == subject, User.number == subject))
     user = (await db.execute(user_query)).scalar()
     if user.is_staff is False:
         raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="This action is forbidden")

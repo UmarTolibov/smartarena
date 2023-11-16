@@ -76,16 +76,18 @@ async def login(user: LogInModel, db: AsyncSession = Depends(get_db), authorize:
     if user.email:
         check_user = await db.execute(check_email_query)
         check_user = check_user.scalar()
+        subject = check_user.email
     elif user.username:
         check_user = await db.execute(check_username_query)
         check_user = check_user.scalar()
+        subject = check_user.username
     elif user.number:
         check_user = await db.execute(check_number_query)
         check_user = check_user.scalar()
+        subject = check_user.number
     else:
         raise exceptions.HTTPException(status_code=400, detail="email/username/number must be provided")
     if check_user and check_password_hash(check_user.password, user.password):
-        subject = check_user.username if user.username is not None else user.email
         access_token = authorize.create_access_token(subject=subject)
         refresh_token = authorize.create_refresh_token(subject=subject)
         response = {
@@ -126,7 +128,7 @@ async def verify_email(e: str = Query(..., max_length=50), code: int = None, db:
     query = select(User).where(User.email == e)
     user = await db.execute(query)
     user = user.scalar()
-    if code is None:
+    if code is None and user is not None:
         s_code = await send_email(user)
         try:
             await db.execute(update(User).where(User.email == e).values(email_var=s_code))
@@ -134,12 +136,14 @@ async def verify_email(e: str = Query(..., max_length=50), code: int = None, db:
             await db.refresh(user)
         except ExceptionGroup as e:
             raise exceptions.HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)
-    else:
+    elif code is not None:
         if user.email_var == code:
             await db.execute(update(User).where(User.email == e).values(is_active=True, email_var=0))
             await db.commit()
             await db.refresh(user)
             return encoders.jsonable_encoder({"message": "Email verified"})
+    else:
+        raise exceptions.HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
     return encoders.jsonable_encoder({"message": "verify your email by clicking the link we've sent"})
 
 
@@ -172,7 +176,7 @@ async def change_password(password_data: ChangePassword, c: int = None, user: in
             raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                            detail=f"Provide a valid refresh token{e}")
         subject = authorize.get_jwt_subject()
-        query = select(User).where(or_(User.email == subject, User.username == subject))
+        query = select(User).where(or_(User.email == subject, User.username == subject, User.number == subject))
     user = (await db.execute(query)).scalar()
     password_match = check_password_hash(user.password, password_data.old_password)
     if password_match:
