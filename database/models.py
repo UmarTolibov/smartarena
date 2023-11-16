@@ -36,9 +36,9 @@ class Stadium(Base):
     region = Column(String)
     district = Column(String)
     location = Column(String)
+    number_of_orders = Column(Integer, default=0)
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
     user = relationship(User, backref="stadiums")
-    number_of_orders = Column(Integer, default=0)
 
     def __repr__(self):
         return f"<Stadium {self.name}>"

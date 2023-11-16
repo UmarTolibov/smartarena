@@ -3,5 +3,4 @@
 admin.py
 websocket.py
 Spacefile
-db.sqlite3
 .idea
