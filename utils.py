@@ -13,10 +13,89 @@ async def send_email(user, email_var: bool = True):
     sender_email = "tolibovumar13@gmail.com"
     password = "rkxubwzmmbefmijf"
     try:
-        message = f"""Your verification link:
-        https://smartarena-bbff190dd374.herokuapp.com/auth/verify/?e={user.email.replace('@', '%40')}&code={code}""" if email_var is True else \
-            f"""Your link for resetting password:
-        https://smartarena-bbff190dd374.herokuapp.com/auth/change-password/?user={user.id}&c={code}"""
+        if email_var:
+            message = f"""
+            <html>
+            <head>
+                <style>
+                    body {{
+                        font-family: 'Arial', sans-serif;
+                        background-color: #f4f4f4;
+                        margin: 0;
+                        padding: 20px;
+                    }}
+                    .container {{
+                        background-color: #fff;
+                        border-radius: 8px;
+                        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                        padding: 20px;
+                    }}
+                    h1 {{
+                        color: #333;
+                    }}
+                    p {{
+                        color: #666;
+                        margin-bottom: 15px;
+                    }}
+                    a {{
+                        color: #007bff;
+                        text-decoration: none;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>SmartArena Account Verification</h1>
+                    <p>Thank you for registering with SmartArena! To verify your email and activate your account, please click on the following link:</p>
+                    <p><a href="https://smartarena-bbff190dd374.herokuapp.com/auth/verify/?e={user.email.replace('@', '%40')}&code={code}">Verification Link</a></p>
+                    <p>If you did not register with SmartArena, please ignore this email.</p>
+                    <p>Best regards,<br>The SmartArena Team</p>
+                </div>
+            </body>
+            </html>
+            """
+        else:
+            message = f"""
+            <html>
+            <head>
+                <style>
+                    body {{
+                        font-family: 'Arial', sans-serif;
+                        background-color: #f4f4f4;
+                        margin: 0;
+                        padding: 20px;
+                    }}
+                    .container {{
+                        background-color: #fff;
+                        border-radius: 8px;
+                        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                        padding: 20px;
+                    }}
+                    h1 {{
+                        color: #333;
+                    }}
+                    p {{
+                        color: #666;
+                        margin-bottom: 15px;
+                    }}
+                    a {{
+                        color: #007bff;
+                        text-decoration: none;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>SmartArena Password Reset</h1>
+                    <p>We received a request to reset the password for your SmartArena account. If you did not make this request, please disregard this email.</p>
+                    <p>To reset your password, click on the following link:</p>
+                    <p><a href="https://smartarena-bbff190dd374.herokuapp.com/auth/change-password/?user={user.id}&c={code}">Reset Password Link</a></p>
+                    <p>This link will expire after a certain period for security reasons.</p>
+                    <p>Best regards,<br>The SmartArena Team</p>
+                </div>
+            </body>
+            </html>
+            """
     except AttributeError as e:
         raise HTTPException(status_code=404, detail=e)
     msg = EmailMessage()
