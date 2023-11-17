@@ -197,4 +197,4 @@ async def remove_stadium(s_id: int, authorize: AuthJWT = Depends(), db: AsyncSes
     else:
         await db.execute(delete(Stadium).where(Stadium.id == s_id))
         await db.commit()
-        return Response(content=f"Stadium{stadium.name} deleted", status_code=status.HTTP_200_OK)
+        return Response(content=f"Stadium {stadium.name} deleted", status_code=status.HTTP_200_OK)

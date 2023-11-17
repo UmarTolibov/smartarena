@@ -121,7 +121,7 @@ async def delete_order(order_id: int, authorize: AuthJWT = Depends(),
         delete_query = delete(Order).where(Order.id == order_id)
         await db.execute(delete_query)
         await db.commit()
-
+        return encoders.jsonable_encoder({"message": "deleted"})
 
 @order_router.get('/my')
 async def list_all_my_orders(authorize: AuthJWT = Depends(), db: AsyncSession = Depends(get_db)):
