@@ -1,6 +1,7 @@
+import time
 import inspect
 import re
-from fastapi import FastAPI, routing, encoders, exceptions
+from fastapi import FastAPI, routing, encoders, exceptions, Request
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 # from fastapi.staticfiles import StaticFiles
@@ -14,7 +15,23 @@ app = FastAPI()
 app.include_router(auth_router)
 app.include_router(order_router)
 app.include_router(stadium_router)
-app.add_middleware(TimingMiddleware)
+
+
+@app.middleware("http")
+async def measure_response_time(request: Request, call_next):
+    start_time = time.time()
+
+    response = await call_next(request)
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+
+    route = request.scope.get("fastapi_route", None)
+    function_name = route.name if route else "Unknown Function"
+
+    print(f"Function: {function_name}, Elapsed Time: {elapsed_time} seconds")
+
+    return response
 
 
 # CORS
