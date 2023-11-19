@@ -27,7 +27,7 @@ async def measure_response_time(request: Request, call_next):
     elapsed_time = end_time - start_time
 
     route = request.scope.get("fastapi_route", None)
-    function_name = route.name if route else "Unknown Function"
+    function_name = call_next.__name__
 
     print(f"Function: {function_name}, Elapsed Time: {elapsed_time} seconds")
 
