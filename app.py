@@ -3,7 +3,7 @@ import inspect
 import re
 from fastapi import FastAPI, routing, encoders, exceptions, Request
 from fastapi.openapi.utils import get_openapi
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 # from fastapi.staticfiles import StaticFiles
 # from fastapi.middleware.cors import CORSMiddleware
 from utils import TimingMiddleware
@@ -32,6 +32,12 @@ async def measure_response_time(request: Request, call_next):
     print(f"Function: {function_name}, Elapsed Time: {elapsed_time} seconds")
 
     return response
+
+
+@app.get('/favicon.ico', include_in_schema=False)
+async def favicon():
+    file_path = "./"
+    return FileResponse(file_path)
 
 
 # CORS
