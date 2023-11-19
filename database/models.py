@@ -1,9 +1,25 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import Column, Integer, String, Boolean, Float, ForeignKey, DateTime
+from datetime import datetime, timedelta
+from typing import List
 
 
 class Base(DeclarativeBase):
     pass
+
+
+class Subscription(Base):
+    __tablename__ = "subscription"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    start_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.utcnow)
+    end_date: Mapped[datetime] = mapped_column(nullable=False)
+
+    # Define a relationship to the User model
+    user: Mapped["User"] = relationship("User", back_populates="subscription")
+
+    def __repr__(self):
+        return f"<Subscription {self.user_id} - {self.start_date} to {self.end_date}>"
 
 
 class User(Base):
@@ -15,6 +31,7 @@ class User(Base):
     password: Mapped[str] = mapped_column(nullable=True)
     is_staff: Mapped[bool] = mapped_column(default=False)
     is_active: Mapped[bool] = mapped_column(default=False)
+    subscription: Mapped[List["Subscription"]] = relationship("Subscription", back_populates="user")
     email_var: Mapped[int] = mapped_column(default=0)
     telegram_id: Mapped[int] = mapped_column(default=0)
     logged: Mapped[bool] = mapped_column(default=False)
