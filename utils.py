@@ -1,11 +1,21 @@
 import random
 from email.message import EmailMessage
-
+import time
 import aiosmtplib
 from fastapi.exceptions import HTTPException
 from sqlalchemy.sql import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import Session, engine, Config, Base
+
+
+class MeasureTime:
+    async def __aenter__(self):
+        self.start_time = time.time()
+
+    async def __aexit__(self, exc_type, exc, tb):
+        end_time = time.time()
+        elapsed_time = end_time - self.start_time
+        print(f"Elapsed Time: {elapsed_time} seconds")
 
 
 async def send_email(user, email_var: bool = True):
