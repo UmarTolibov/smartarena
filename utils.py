@@ -2,6 +2,7 @@ import random
 from email.message import EmailMessage
 import time
 import aiosmtplib
+from fastapi import Request
 from fastapi.exceptions import HTTPException
 from sqlalchemy.sql import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -157,3 +158,23 @@ async def get_jwt_key():
             result = await session.execute(q)
             print(result)
             return result
+
+
+class TimingMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, request: Request, call_next):
+        start_time = time.time()
+
+        response = await call_next(request)
+
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+
+        route = request.scope.get("fastapi_route", None)
+        function_name = route.name if route else "Unknown Function"
+
+        print(f"Function: {function_name}, Elapsed Time: {elapsed_time} seconds")
+
+        return response

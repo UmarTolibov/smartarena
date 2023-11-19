@@ -5,7 +5,7 @@ from sqlalchemy.sql import exists, select, update, or_
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from database import SignUpModel, LogInModel, Settings, ChangePassword, Email, User
-from utils import get_db, send_email, MeasureTime
+from utils import get_db, send_email
 
 auth_router = APIRouter(tags=['Authentication'], prefix='/auth')
 
@@ -31,31 +31,30 @@ async def signup(user_data: SignUpModel, db: AsyncSession = Depends(get_db)):
 
         ```
     """
-    async with MeasureTime():
-        check_email_query = select(exists().where(User.email == user_data.email))
-        check_username_query = select(exists().where(User.username == user_data.username))
-        check_number_query = select(exists().where(User.number == user_data.number))
+    check_email_query = select(exists().where(User.email == user_data.email))
+    check_username_query = select(exists().where(User.username == user_data.username))
+    check_number_query = select(exists().where(User.number == user_data.number))
 
-        check_email = await db.execute(check_email_query)
-        check_username = await db.execute(check_username_query)
-        check_number = await db.execute(check_number_query)
+    check_email = await db.execute(check_email_query)
+    check_username = await db.execute(check_username_query)
+    check_number = await db.execute(check_number_query)
 
-        if check_email.scalar() or check_username.scalar() or check_number.scalar():
-            raise exceptions.HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                           detail="User with this email/username already exists")
+    if check_email.scalar() or check_username.scalar() or check_number.scalar():
+        raise exceptions.HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                       detail="User with this email/username already exists")
 
-        new_user = User(
-            username=user_data.username,
-            email=user_data.email,
-            number=user_data.number,
-            password=generate_password_hash(user_data.password),
-            is_active=user_data.is_active,
-            is_staff=user_data.is_staff
-        )
-        db.add(new_user)
-        await db.commit()
-        await db.refresh(new_user)
-        return new_user
+    new_user = User(
+        username=user_data.username,
+        email=user_data.email,
+        number=user_data.number,
+        password=generate_password_hash(user_data.password),
+        is_active=user_data.is_active,
+        is_staff=user_data.is_staff
+    )
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+    return new_user
 
 
 @auth_router.post('/login', status_code=status.HTTP_200_OK, response_description="logged in")
@@ -71,34 +70,32 @@ async def login(user: LogInModel, db: AsyncSession = Depends(get_db), authorize:
 
         Returns a pair of jwt tokens : `access` and `refresh`
     """
-    async with MeasureTime():
-
-        check_email_query = select(User).where(User.email == user.email)
-        check_username_query = select(User).where(User.username == user.username)
-        check_number_query = select(User).where(User.number == user.number)
-        if user.email:
-            check_user = await db.execute(check_email_query)
-            check_user = check_user.scalar()
-            subject = check_user.email
-        elif user.username:
-            check_user = await db.execute(check_username_query)
-            check_user = check_user.scalar()
-            subject = check_user.username
-        elif user.number:
-            check_user = await db.execute(check_number_query)
-            check_user = check_user.scalar()
-            subject = check_user.number
-        else:
-            raise exceptions.HTTPException(status_code=400, detail="email/username/number must be provided")
-        if check_user and check_password_hash(check_user.password, user.password):
-            access_token = authorize.create_access_token(subject=subject)
-            refresh_token = authorize.create_refresh_token(subject=subject)
-            response = {
-                "access": access_token,
-                "refresh": refresh_token
-            }
-            return encoders.jsonable_encoder(response)
-        raise exceptions.HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid username or password")
+    check_email_query = select(User).where(User.email == user.email)
+    check_username_query = select(User).where(User.username == user.username)
+    check_number_query = select(User).where(User.number == user.number)
+    if user.email:
+        check_user = await db.execute(check_email_query)
+        check_user = check_user.scalar()
+        subject = check_user.email
+    elif user.username:
+        check_user = await db.execute(check_username_query)
+        check_user = check_user.scalar()
+        subject = check_user.username
+    elif user.number:
+        check_user = await db.execute(check_number_query)
+        check_user = check_user.scalar()
+        subject = check_user.number
+    else:
+        raise exceptions.HTTPException(status_code=400, detail="email/username/number must be provided")
+    if check_user and check_password_hash(check_user.password, user.password):
+        access_token = authorize.create_access_token(subject=subject)
+        refresh_token = authorize.create_refresh_token(subject=subject)
+        response = {
+            "access": access_token,
+            "refresh": refresh_token
+        }
+        return encoders.jsonable_encoder(response)
+    raise exceptions.HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid username or password")
 
 
 @auth_router.get('/refresh', status_code=status.HTTP_200_OK)
