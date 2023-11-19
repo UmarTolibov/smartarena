@@ -71,32 +71,34 @@ async def login(user: LogInModel, db: AsyncSession = Depends(get_db), authorize:
 
         Returns a pair of jwt tokens : `access` and `refresh`
     """
-    check_email_query = select(User).where(User.email == user.email)
-    check_username_query = select(User).where(User.username == user.username)
-    check_number_query = select(User).where(User.number == user.number)
-    if user.email:
-        check_user = await db.execute(check_email_query)
-        check_user = check_user.scalar()
-        subject = check_user.email
-    elif user.username:
-        check_user = await db.execute(check_username_query)
-        check_user = check_user.scalar()
-        subject = check_user.username
-    elif user.number:
-        check_user = await db.execute(check_number_query)
-        check_user = check_user.scalar()
-        subject = check_user.number
-    else:
-        raise exceptions.HTTPException(status_code=400, detail="email/username/number must be provided")
-    if check_user and check_password_hash(check_user.password, user.password):
-        access_token = authorize.create_access_token(subject=subject)
-        refresh_token = authorize.create_refresh_token(subject=subject)
-        response = {
-            "access": access_token,
-            "refresh": refresh_token
-        }
-        return encoders.jsonable_encoder(response)
-    raise exceptions.HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid username or password")
+    async with MeasureTime():
+
+        check_email_query = select(User).where(User.email == user.email)
+        check_username_query = select(User).where(User.username == user.username)
+        check_number_query = select(User).where(User.number == user.number)
+        if user.email:
+            check_user = await db.execute(check_email_query)
+            check_user = check_user.scalar()
+            subject = check_user.email
+        elif user.username:
+            check_user = await db.execute(check_username_query)
+            check_user = check_user.scalar()
+            subject = check_user.username
+        elif user.number:
+            check_user = await db.execute(check_number_query)
+            check_user = check_user.scalar()
+            subject = check_user.number
+        else:
+            raise exceptions.HTTPException(status_code=400, detail="email/username/number must be provided")
+        if check_user and check_password_hash(check_user.password, user.password):
+            access_token = authorize.create_access_token(subject=subject)
+            refresh_token = authorize.create_refresh_token(subject=subject)
+            response = {
+                "access": access_token,
+                "refresh": refresh_token
+            }
+            return encoders.jsonable_encoder(response)
+        raise exceptions.HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid username or password")
 
 
 @auth_router.get('/refresh', status_code=status.HTTP_200_OK)

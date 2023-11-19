@@ -3,7 +3,7 @@ from fastapi_jwt_auth import AuthJWT
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import select, update, delete, or_, and_
 from database import User, Stadium, StadiumModel
-from utils import get_db
+from utils import get_db, MeasureTime
 
 stadium_router = APIRouter(prefix="/stadium", tags=['Stadium'])
 
@@ -146,31 +146,32 @@ async def retrieve_or_get_all_stadium(s_id: int = 0, get_all: bool = False, auth
                 "get_all": bool = False|0
                 ```
     """
+    async with MeasureTime():
 
-    try:
-        authorize.jwt_required()
-        subject = authorize.get_jwt_subject()
-    except Exception as e:
-        raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                       detail=f"Please provide a valid token\n{e}")
-    user_query = select(User.is_staff).where(
-        or_(User.email == subject, User.username == subject, User.number == subject))
-    user = (await db.execute(user_query)).scalar()
-    if user:
-        if get_all is True and s_id == 0:
-            query = select(Stadium).where(Stadium.is_active)
-            stadiums = (await db.execute(query)).scalars().all()
-            return encoders.jsonable_encoder(stadiums)
-        elif s_id != 0 and get_all is False:
-            query = select(Stadium).where(Stadium.id == s_id)
-            stadium = (await db.execute(query)).scalar()
-            return encoders.jsonable_encoder(stadium)
+        try:
+            authorize.jwt_required()
+            subject = authorize.get_jwt_subject()
+        except Exception as e:
+            raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                           detail=f"Please provide a valid token\n{e}")
+        user_query = select(User.is_staff).where(
+            or_(User.email == subject, User.username == subject, User.number == subject))
+        user = (await db.execute(user_query)).scalar()
+        if user:
+            if get_all is True and s_id == 0:
+                query = select(Stadium).where(Stadium.is_active)
+                stadiums = (await db.execute(query)).scalars().all()
+                return encoders.jsonable_encoder(stadiums)
+            elif s_id != 0 and get_all is False:
+                query = select(Stadium).where(Stadium.id == s_id)
+                stadium = (await db.execute(query)).scalar()
+                return encoders.jsonable_encoder(stadium)
+            else:
+                raise exceptions.HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                               detail="Please use at least one query")
         else:
-            raise exceptions.HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                           detail="Please use at least one query")
-    else:
-        raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                       detail="Please activate your account")
+            raise exceptions.HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                           detail="Please activate your account")
 
 
 @stadium_router.delete('/delete')
