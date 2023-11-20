@@ -160,21 +160,17 @@ async def get_jwt_key():
             return result
 
 
-class TimingMiddleware:
-    def __init__(self, app):
-        self.app = app
+async def measure_response_time(request: Request, call_next):
+    start_time = time.time()
 
-    async def __call__(self, request: Request, call_next):
-        start_time = time.time()
+    response = await call_next(request)
 
-        response = await call_next(request)
+    end_time = time.time()
+    elapsed_time = end_time - start_time
 
-        end_time = time.time()
-        elapsed_time = end_time - start_time
+    route = request.scope.get("fastapi_route", None)
+    function_name = request.url.path
 
-        route = request.scope.get("fastapi_route", None)
-        function_name = route.name if route else "Unknown Function"
+    print(f"Function: {function_name}, Elapsed Time: {elapsed_time} seconds")
 
-        print(f"Function: {function_name}, Elapsed Time: {elapsed_time} seconds")
-
-        return response
+    return response

@@ -1,61 +1,18 @@
-import time
 import inspect
 import re
-from fastapi import FastAPI, routing, encoders, exceptions, Request
+from fastapi import FastAPI, routing, encoders, exceptions
 from fastapi.openapi.utils import get_openapi
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse
+from config import description
 # from fastapi.staticfiles import StaticFiles
 # from fastapi.middleware.cors import CORSMiddleware
-from utils import TimingMiddleware
-from config import description
+# app.mount('/static', StaticFiles(directory=BASE_DIR + '/statics/'), name='static')
 from routers import auth_router, order_router, stadium_router
 
 app = FastAPI()
-# app.mount('/static', StaticFiles(directory=BASE_DIR + '/statics/'), name='static')
 app.include_router(auth_router)
 app.include_router(order_router)
 app.include_router(stadium_router)
-
-
-@app.middleware("http")
-async def measure_response_time(request: Request, call_next):
-    start_time = time.time()
-
-    response = await call_next(request)
-
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-
-    route = request.scope.get("fastapi_route", None)
-    function_name = request.url.path
-
-    print(f"Function: {function_name}, Elapsed Time: {elapsed_time} seconds")
-
-    return response
-
-
-@app.get('/favicon.ico', include_in_schema=False)
-async def favicon():
-    file_path = "./"
-    return FileResponse(file_path)
-
-
-# CORS
-
-# origins = [
-#     "http://localhost.tiangolo.com",
-#     "https://localhost.tiangolo.com",
-#     "http://localhost",
-#     "http://localhost:8080",
-# ]
-#
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=origins,
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
 
 
 @app.get("/", status_code=200, include_in_schema=False)
@@ -127,3 +84,20 @@ def custom_openapi():
 
 
 app.openapi = custom_openapi
+
+# CORS
+
+# origins = [
+#     "http://localhost.tiangolo.com",
+#     "https://localhost.tiangolo.com",
+#     "http://localhost",
+#     "http://localhost:8080",
+# ]
+#
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=origins,
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
