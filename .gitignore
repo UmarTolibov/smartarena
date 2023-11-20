@@ -1,7 +1,3 @@
 /venv
-/statics
-admin.py
-websocket.py
-Spacefile
 .idea
 /__pycache__

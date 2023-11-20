@@ -1,22 +1,10 @@
 import random
 from email.message import EmailMessage
-import time
 import aiosmtplib
-from fastapi import Request
-from fastapi.exceptions import HTTPException
 from sqlalchemy.sql import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from database import Session, engine, Config, Base
-
-
-class MeasureTime:
-    async def __aenter__(self):
-        self.start_time = time.time()
-
-    async def __aexit__(self, exc_type, exc, tb):
-        end_time = time.time()
-        elapsed_time = end_time - self.start_time
-        print(f"Elapsed Time: {elapsed_time} seconds")
 
 
 async def send_email(user, email_var: bool = True):
@@ -160,17 +148,3 @@ async def get_jwt_key():
             return result
 
 
-async def measure_response_time(request: Request, call_next):
-    start_time = time.time()
-
-    response = await call_next(request)
-
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-
-    route = request.scope.get("fastapi_route", None)
-    function_name = request.url.path
-
-    print(f"Function: {function_name}, Elapsed Time: {elapsed_time} seconds")
-
-    return response

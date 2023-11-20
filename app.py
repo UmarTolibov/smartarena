@@ -3,16 +3,18 @@ import re
 from fastapi import FastAPI, routing, encoders, exceptions
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
-from config import description
 # from fastapi.staticfiles import StaticFiles
 # from fastapi.middleware.cors import CORSMiddleware
-# app.mount('/static', StaticFiles(directory=BASE_DIR + '/statics/'), name='static')
-from routers import auth_router, order_router, stadium_router
 
+from utils import description, MeasureResponseTimeMiddleware
+from routers import *
+
+# app.mount('/static', StaticFiles(directory=BASE_DIR + '/statics/'), name='static')
 app = FastAPI()
 app.include_router(auth_router)
 app.include_router(order_router)
 app.include_router(stadium_router)
+app.middleware("http")(MeasureResponseTimeMiddleware(app))
 
 
 @app.get("/", status_code=200, include_in_schema=False)
@@ -31,7 +33,7 @@ async def handle_http_exception(request, exc):
 
 @app.exception_handler(Exception)
 async def handle_exception(request, exc):
-    print(request, exc)
+    print("/app line 35", request, exc, sep=" ")
     return JSONResponse(
         status_code=500,
         content={"message": "Internal Server Error"}
