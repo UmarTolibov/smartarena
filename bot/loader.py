@@ -1,5 +1,5 @@
 from telebot.async_telebot import AsyncTeleBot
-from telebot.asyncio_storage import StateMemoryStorage
+from telebot.storage import StateMemoryStorage
 from telebot import asyncio_filters
 from telebot.types import Update, Message, BotCommand
 
