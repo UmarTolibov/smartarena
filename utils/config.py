@@ -1,8 +1,8 @@
 import os
 
-TOKEN = "6396643149:AAF3Ddb2fJCHETm5aQkwkh9SgopvT5slzy0"
+TOKEN = "6262727985:AAE3r4pe-71tWcIEUNOTVenxbz49_rOBoxU"
 WEBHOOK_PATH = f"/webhook/{TOKEN}/"
-WEBHOOK_URL = "https://fastapi123-1-v3433326.deta.app" + WEBHOOK_PATH
+WEBHOOK_URL = "https://smartarena-bbff190dd374.herokuapp.com" + WEBHOOK_PATH
 SLI_TOKEN = "gnTHhoTY_GAgN29Beg49BRNybun9uwSqu9HFdYRF6"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
