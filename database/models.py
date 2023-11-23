@@ -124,3 +124,12 @@ class Config(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     key: Mapped[str] = mapped_column(unique=True)
     value: Mapped[str] = mapped_column(unique=True)
+
+
+class Table(Base):
+    __tablename__ = "table"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column()
+    email: Mapped[str] = mapped_column()
+    subject: Mapped[str] = mapped_column()
+    message: Mapped[str] = mapped_column()

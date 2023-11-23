@@ -1,12 +1,13 @@
 import inspect
 import re
-from fastapi import FastAPI, routing, encoders, exceptions
+from fastapi import FastAPI, routing, encoders, exceptions, Form, Depends
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 # from fastapi.staticfiles import StaticFiles
 # from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from utils import description, MeasureResponseTimeMiddleware
+from utils import description, MeasureResponseTimeMiddleware, get_db
 from routers import *
 
 # app.mount('/static', StaticFiles(directory=BASE_DIR + '/statics/'), name='static')
@@ -21,6 +22,23 @@ app.middleware("http")(MeasureResponseTimeMiddleware(app))
 async def main():
     return encoders.jsonable_encoder({"name": "API", "status": "ok"})
 
+
+@app.post("/submit_form")
+async def submit_form(name: str = Form(...),
+                      email: str = Form(...),
+                      subject: str = Form(...),
+                      message: str = Form(...),
+                      db: AsyncSession = Depends(get_db)):
+    from database.models import Table
+    table = Table(name=name, email=email, subject=subject, message=message)
+    db.add(table)
+    try:
+        await db.commit()
+        await db.refresh(table)
+        return {"message": "Done"}
+    except Exception as e:
+        raise exceptions.HTTPException(401, detail="bad request")
+        
 
 @app.exception_handler(exceptions.HTTPException)
 async def handle_http_exception(request, exc):
