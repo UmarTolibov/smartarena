@@ -1,6 +1,9 @@
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import Column, Integer, String, Boolean, Float, ForeignKey, DateTime
-from datetime import datetime
+import json
+
+from sqlalchemy.dialects.sqlite import JSON
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, reconstructor
+from sqlalchemy import ForeignKey
+from datetime import datetime, timedelta
 from typing import List
 
 
@@ -11,11 +14,11 @@ class Base(DeclarativeBase):
 class Subscription(Base):
     __tablename__ = "subscription"
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
     start_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.utcnow)
     end_date: Mapped[datetime] = mapped_column(nullable=False)
 
     # Define a relationship to the User model
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
     user: Mapped["User"] = relationship("User", back_populates="subscription")
 
     def __repr__(self):
@@ -31,10 +34,13 @@ class User(Base):
     password: Mapped[str] = mapped_column(nullable=True)
     is_staff: Mapped[bool] = mapped_column(default=False)
     is_active: Mapped[bool] = mapped_column(default=False)
-    subscription: Mapped[List["Subscription"]] = relationship("Subscription", back_populates="user")
     email_var: Mapped[int] = mapped_column(default=0)
     telegram_id: Mapped[int] = mapped_column(default=0)
     logged: Mapped[bool] = mapped_column(default=False)
+
+    subscription: Mapped[List["Subscription"]] = relationship(back_populates="user")
+    stadiums: Mapped[List["Stadium"]] = relationship(back_populates="user")
+    orders: Mapped[List["Order"]] = relationship(back_populates="user")
 
     def __repr__(self):
         return f"<User {self.email}>"
@@ -42,20 +48,49 @@ class User(Base):
 
 class Stadium(Base):
     __tablename__ = "stadium"
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    description = Column(String)
-    image_url = Column(String(255))
-    price = Column(Float, default=0.0)
-    opening_time = Column(String, default="08:00:00")
-    closing_time = Column(String, default="00:00:00")
-    is_active = Column(Boolean, default=False)
-    region = Column(String)
-    district = Column(String)
-    location = Column(String)
-    number_of_orders = Column(Integer, default=0)
-    user_id = Column(Integer, ForeignKey(User.id), nullable=False)
-    user = relationship(User, backref="stadiums")
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(nullable=False)
+    description: Mapped[str] = mapped_column()
+    image_url: Mapped[str] = mapped_column()
+    price: Mapped[float] = mapped_column(default=0.0)
+    opening_time: Mapped[str] = mapped_column(default="08:00:00")
+    closing_time: Mapped[str] = mapped_column(default="00:00:00")
+    is_active: Mapped[bool] = mapped_column(default=False)
+    region: Mapped[str] = mapped_column()
+    district: Mapped[str] = mapped_column()
+    location: Mapped[dict] = mapped_column(JSON, default={"longitude": 0, "latitude": 0})
+    number_of_orders: Mapped[int] = mapped_column(default=0)
+    # relationships
+    user_id: Mapped[int] = mapped_column(ForeignKey(User.id), nullable=False)
+    user: Mapped["User"] = relationship(back_populates="stadiums")
+    # etc..
+    available_slots: Mapped[str] = mapped_column(default="[]")
+
+    @reconstructor
+    def init_on_load(self):
+        self.calculate_available_slots()
+
+    def calculate_available_slots(self):
+        busy_slots = self.calculate_busy_slots()
+        total_slots = self.calculate_total_slots()
+
+        # Convert datetime objects to string format
+        busy_slots_str = [(str(slot[0]), str(slot[1])) for slot in busy_slots]
+        total_slots_str = [(str(slot[0]), str(slot[1])) for slot in total_slots]
+
+        # Calculate available slots by subtracting busy slots from total slots
+        self.available_slots = json.dumps(list(set(total_slots_str) - set(busy_slots_str)))
+
+    def calculate_busy_slots(self):
+        busy_slots = [(order.start_time, order.start_time + timedelta(hours=order.hour)) for order in self.orders]
+        return busy_slots
+
+    def calculate_total_slots(self):
+        opening_time = datetime.strptime(self.opening_time, "%H:%M:%S")
+        closing_time = datetime.strptime(self.closing_time, "%H:%M:%S")
+        total_slots = [(opening_time + timedelta(hours=i), opening_time + timedelta(hours=i + 1)) for i in
+                       range(int((closing_time - opening_time).seconds / 3600))]
+        return total_slots
 
     def __repr__(self):
         return f"<Stadium {self.name}>"
@@ -63,14 +98,22 @@ class Stadium(Base):
 
 class Order(Base):
     __tablename__ = "order"
-    id = Column(Integer, primary_key=True)
-    status = Column(String)
-    user_id = Column(Integer, ForeignKey(User.id), nullable=False)
-    stadium_id = Column(Integer, ForeignKey(Stadium.id), nullable=False)
-    user = relationship(User, backref="orders")
-    stadium = relationship(Stadium, backref="orders")
-    start_time = Column(DateTime)
-    hour = Column(Integer)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    status: Mapped[int] = mapped_column()
+    start_time: Mapped[datetime] = mapped_column()
+    hour: Mapped[int] = mapped_column(default=1)
+
+    user_id: Mapped[int] = mapped_column(ForeignKey(User.id), nullable=False)
+    user: Mapped["User"] = relationship(User, back_populates="orders")
+
+    stadium_id: Mapped[int] = mapped_column(ForeignKey(Stadium.id), nullable=False)
+    stadium: Mapped["Stadium"] = relationship(Stadium, backref="orders")
+
+    @property
+    def end_time(self):
+        if self.start_time and self.hour is not None:
+            return self.start_time + timedelta(hours=self.hour)
+        return None
 
     def __repr__(self):
         return f"<Order order{self.id}>"

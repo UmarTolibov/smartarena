@@ -19,14 +19,14 @@ class StadiumModel(BaseModel):
     is_active: Optional[bool] = True
     region: str = "Tashkent"
     district: str = "Yakka Saroy"
-    location: str = "2-uy"
+    location: dict = {"longitude": 0, "latitude": 0}
 
     class Config:
         orm_mode = True
         schema_extra = {
             'example': {
-                "name": "admin",
-                "description": "a@gmail.com",
+                "name": "name",
+                "description": "description",
                 "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Example_image.svg/600px"
                          "-Example_image.svg.png",
                 "price": 100.23,
@@ -35,7 +35,7 @@ class StadiumModel(BaseModel):
                 "is_active": True,
                 "region": "Tashkent",
                 "district": "Yakka Saroy",
-                "location": "2-uy"
+                "location": {"longitude": 22, "latitude": 23}
 
             }
         }
