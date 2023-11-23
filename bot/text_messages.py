@@ -277,20 +277,23 @@ async def add_stadium(msg: Message):
     chat_id = msg.chat.id
     user_id = msg.from_user.id
     message = pformat({
-        "name": "Stadium",
-        "description": "some description",
-        "image": "img url",
-        "price": 1,
+        "name": "name",
+        "description": "description",
+        "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Example_image.svg/600px-Example_image.svg.png",
+        "price": 100.23,
         "opening_time": "00:00:00",
         "closing_time": "00:00:00",
-        "is_active": 1,
+        "is_active": True,
         "region": "Tashkent",
         "district": "Yakka Saroy",
-        "location": "2-uy"
+        "location": {
+            "longitude": 22,
+            "latitude": 23
+        }
     }, sort_dicts=False)
     await bot.send_message(chat_id,
                            f"""Please send the stadium info in json format!\nJust copy this and change the 
-                           values\n<code>{message}</code>""",
+                           values\n```{message}```""",
                            parse_mode="html")
     await bot.set_state(user_id, sts.get_stadium_json, chat_id)
 
