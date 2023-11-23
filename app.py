@@ -3,10 +3,12 @@ import re
 from fastapi import FastAPI, routing, encoders, exceptions, Form, Depends
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
+from sqlalchemy import select
 # from fastapi.staticfiles import StaticFiles
 # from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from database import Table
 from utils import description, MeasureResponseTimeMiddleware, get_db
 from routers import *
 
@@ -38,7 +40,14 @@ async def submit_form(name: str = Form(...),
         return {"message": "Done"}
     except Exception as e:
         raise exceptions.HTTPException(401, detail="bad request")
-        
+
+
+@app.get("/submit_form")
+async def submit_form(db: AsyncSession = Depends(get_db)):
+    query = select(Table)
+    table = (await db.execute(query)).scalars()
+    return encoders.jsonable_encoder({"data": table.all()})
+
 
 @app.exception_handler(exceptions.HTTPException)
 async def handle_http_exception(request, exc):
