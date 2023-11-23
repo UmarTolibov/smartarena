@@ -9,6 +9,7 @@ from database import User
 
 @bot.message_handler(commands=['start'])
 async def greeting(msg: Message):
+    print("ASDASDA")
     chat_id = msg.chat.id
     user_id = msg.from_user.id
     async with Session.begin() as conn:

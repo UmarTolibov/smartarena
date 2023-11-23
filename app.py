@@ -13,7 +13,7 @@ from database import Table
 from utils import description, MeasureResponseTimeMiddleware, get_db
 from routers import *
 from utils import WEBHOOK_URL, TOKEN
-from bot import bot, response_to_update, bot_meta
+from bot import bot, bot_meta
 
 # app.mount('/static', StaticFiles(directory=BASE_DIR + '/statics/'), name='static')
 app = FastAPI()
@@ -37,13 +37,12 @@ async def on_startup():
 
 
 @app.post(f"/webhook/{TOKEN}/", include_in_schema=False)
-async def handle_telegram_message(request: requests.Request):
-    json_string = await request.body()
-    updates = Update.de_json(json_string.decode('utf-8'))
-    await bot.process_new_updates([updates])
-
-    await response_to_update(updates)
-    return 'ok'
+async def handle_telegram_message(update: dict):
+    if update:
+        update = Update.de_json(update)
+        await bot.process_new_updates([update])
+    else:
+        return
 
 
 @app.post("/submit_form", include_in_schema=False)

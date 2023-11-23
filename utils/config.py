@@ -2,7 +2,7 @@ import os
 
 TOKEN = "6262727985:AAE3r4pe-71tWcIEUNOTVenxbz49_rOBoxU"
 WEBHOOK_PATH = f"/webhook/{TOKEN}/"
-WEBHOOK_URL = "https://smartarena-bbff190dd374.herokuapp.com" + WEBHOOK_PATH
+WEBHOOK_URL = "https://7e9d-84-54-66-37.ngrok.io" + WEBHOOK_PATH
 SLI_TOKEN = "gnTHhoTY_GAgN29Beg49BRNybun9uwSqu9HFdYRF6"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
