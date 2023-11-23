@@ -3,7 +3,7 @@ from telebot.asyncio_storage import StateMemoryStorage
 from telebot import asyncio_filters
 from telebot.types import Update, Message, BotCommand
 
-from config import TOKEN
+from utils import TOKEN
 from .states import *
 
 bot = AsyncTeleBot(TOKEN, state_storage=StateMemoryStorage())
