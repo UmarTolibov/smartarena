@@ -1,10 +1,10 @@
 from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_storage import StateMemoryStorage
 from telebot import asyncio_filters
-from telebot.types import Update, Message, BotCommand
+from telebot.types import Update, BotCommand
 
 from utils import TOKEN
-from .states import *
+from bot.common.states import *
 
 bot = AsyncTeleBot(TOKEN, state_storage=StateMemoryStorage())
 bot.add_custom_filter(asyncio_filters.StateFilter(bot))

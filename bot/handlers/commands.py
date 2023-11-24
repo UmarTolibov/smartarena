@@ -2,8 +2,8 @@ from telebot.types import Message
 from sqlalchemy.sql import select
 
 from database.connection import Session
-from .loader import bot, sts
-from .markups import *
+from bot.loader import bot, sts
+from bot.common.markups import *
 from database import User
 
 

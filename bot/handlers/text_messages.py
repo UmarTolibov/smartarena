@@ -4,11 +4,11 @@ import io
 from telebot.types import Message, ReplyKeyboardRemove
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.sql import select, update, or_, and_
-from .loader import bot, sts
+from bot.loader import bot, sts
 from werkzeug.security import check_password_hash
 from database.connection import Session
 from database import User, Stadium, Order, StadiumModel, OrderModel
-from .markups import menu, cancel, crud_markup
+from bot.common.markups import menu, cancel, crud_markup
 import json
 from pprint import pformat
 

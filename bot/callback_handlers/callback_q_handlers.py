@@ -2,7 +2,7 @@ from database.connection import Session
 from database import User, Stadium, Order
 from sqlalchemy.sql import select, delete, or_, and_
 
-from .loader import bot, sts
+from bot.loader import bot, sts
 from telebot.types import CallbackQuery
 
 
