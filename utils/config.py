@@ -1,13 +1,14 @@
 import os
 
+server_url = "https://smartarena-bbff190dd374.herokuapp.com"
+ngorok_url = "https://04e2-45-150-26-184.ngrok.io"
 TOKEN = "6262727985:AAE3r4pe-71tWcIEUNOTVenxbz49_rOBoxU"
 WEBHOOK_PATH = f"/webhook/{TOKEN}/"
-PRODUCTION_URL = "https://smartarena-bbff190dd374.herokuapp.com"
-TEST_URL = "https://04e2-45-150-26-184.ngrok.io"
-WEBHOOK_URL = PRODUCTION_URL + WEBHOOK_PATH
 SLI_TOKEN = "gnTHhoTY_GAgN29Beg49BRNybun9uwSqu9HFdYRF6"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
+BASE_URL = ngorok_url if BASE_DIR.replace("\\",
+                                          "/") == "C:/Users/User/Documents/GitHub/smartarena/utils" else server_url
+WEBHOOK_URL = BASE_URL + WEBHOOK_PATH
 
 description = """
 SmartArena API

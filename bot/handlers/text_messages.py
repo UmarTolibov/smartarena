@@ -66,12 +66,14 @@ async def get_password(msg: Message):
         query = select(User).where(or_(User.email == data["username"], User.username == data["username"]))
     async with Session.begin() as conn:
         user = (await conn.execute(query)).scalar()
-        if check_password_hash(user.password, msg.text):
-            query = update(User).where(User.id == user.id).values(telegram_id=user_id)
+        if check_password_hash(user.password, msg.text) and not user.logged:
+            query = update(User).where(User.id == user.id).values(telegram_id=user_id, logged=True)
             await conn.execute(query)
             await conn.commit()
             await bot.send_message(chat_id, "You are now loggen in", reply_markup=menu())
             await bot.delete_state(user_id, chat_id)
+
+
         else:
             await bot.send_message(chat_id, "Please re-enter your username/email and password")
             await bot.set_state(user_id, sts.username, chat_id)
