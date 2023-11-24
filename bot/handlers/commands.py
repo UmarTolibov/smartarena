@@ -30,4 +30,4 @@ async def logout(msg: Message):
     async with Session.begin() as db:
         user = (await db.execute(select(User).where(User.telegram_id == user_id))).scalar()
         query = update(User).where(User.telegram_id == user_id).values(telegram_id=0, logged=False)
-
+    await bot.send_message("Logged out!", reply_markup=login(), reply_to_message_id=msg.message_id)
