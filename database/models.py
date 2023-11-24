@@ -31,19 +31,29 @@ class User(Base):
     username: Mapped[str] = mapped_column(unique=True)
     email: Mapped[str] = mapped_column(unique=True)
     number: Mapped[str] = mapped_column(unique=True)
+    gender: Mapped[str] = mapped_column(nullable=True)
     password: Mapped[str] = mapped_column(nullable=True)
     is_staff: Mapped[bool] = mapped_column(default=False)
     is_active: Mapped[bool] = mapped_column(default=False)
+    lang: Mapped[str] = mapped_column(default="eng")
     email_var: Mapped[int] = mapped_column(default=0)
-    telegram_id: Mapped[int] = mapped_column(default=0)
-    logged: Mapped[bool] = mapped_column(default=False)
 
+    sessions: Mapped[List["UserSessions"]] = relationship(back_populates="user", overlaps="session")
     subscription: Mapped[List["Subscription"]] = relationship(back_populates="user")
     stadiums: Mapped[List["Stadium"]] = relationship(back_populates="user")
     orders: Mapped[List["Order"]] = relationship(back_populates="user")
 
     def __repr__(self):
         return f"<User {self.email}>"
+
+
+class UserSessions(Base):
+    __tablename__ = "user_session"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    telegram_id: Mapped[int] = mapped_column()
+    logged: Mapped[bool] = mapped_column(default=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey(User.id), nullable=True)
+    user: Mapped["User"] = relationship(User, back_populates="sessions")
 
 
 class Stadium(Base):
@@ -63,6 +73,7 @@ class Stadium(Base):
     # relationships
     user_id: Mapped[int] = mapped_column(ForeignKey(User.id), nullable=False)
     user: Mapped["User"] = relationship(back_populates="stadiums")
+    orders: Mapped["Order"] = relationship(back_populates="stadium")
     # etc..
     available_slots: Mapped[str] = mapped_column(default="[]")
 
@@ -107,7 +118,7 @@ class Order(Base):
     user: Mapped["User"] = relationship(User, back_populates="orders")
 
     stadium_id: Mapped[int] = mapped_column(ForeignKey(Stadium.id), nullable=False)
-    stadium: Mapped["Stadium"] = relationship(Stadium, backref="orders")
+    stadium: Mapped["Stadium"] = relationship(Stadium, back_populates="orders")
 
     @property
     def end_time(self):

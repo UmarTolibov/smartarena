@@ -1,3 +1,3 @@
-from .handlers import commands, text_messages
-from .callback_handlers import callback_q_handlers
+from .handlers import commands, text
+from .handlers import callbacks
 from .loader import bot, bot_meta

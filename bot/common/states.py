@@ -1,7 +1,8 @@
 from telebot.asyncio_handler_backends import State, StatesGroup
 
 
-class RegisterationState(StatesGroup):
+class RegistrationState(StatesGroup):
+    register = State()
     lang = State()
     name = State()
     gender = State()
@@ -12,6 +13,7 @@ class RegisterationState(StatesGroup):
 
 
 class CustomState(StatesGroup):
+    menu = State()
     main = State()
     log_in = State()
     username = State()

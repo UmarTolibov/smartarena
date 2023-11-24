@@ -10,6 +10,7 @@ bot = AsyncTeleBot(TOKEN, state_storage=StateMemoryStorage())
 bot.add_custom_filter(asyncio_filters.StateFilter(bot))
 bot.add_custom_filter(asyncio_filters.ChatFilter())
 sts = CustomState()
+reg_state = RegistrationState()
 
 
 async def bot_meta():
@@ -28,4 +29,3 @@ async def bot_meta():
 async def response_to_update(update: Update):
     message = update.message
     callback = update.callback_query
-

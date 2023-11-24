@@ -4,13 +4,16 @@ import io
 from telebot.types import Message, ReplyKeyboardRemove
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.sql import select, update, or_, and_
-from bot.loader import bot, sts
 from werkzeug.security import check_password_hash
-from database.connection import Session
-from database import User, Stadium, Order, StadiumModel, OrderModel
-from bot.common.markups import menu, cancel, crud_markup
 import json
 from pprint import pformat
+
+from bot.loader import bot, sts, reg_state
+from database.connection import Session
+from database import User, Stadium, Order, StadiumModel, OrderModel, UserSessions
+from bot.keyboards.default import *
+from bot.keyboards.inline import *
+from bot.common.bot_config import __
 
 
 # cancel button
@@ -24,18 +27,19 @@ async def cancel_op(msg: Message):
 
 
 # ==============================================================================
-#                                  TO LOGIN                                    #
+#                                   SIGN UP/ LOG IN                            #
 # ==============================================================================
 
-
-@bot.message_handler(content_types=['text'], state=sts.log_in)
-async def log_in_start(msg: Message):
+@bot.message_handler(content_types=['text'], state=reg_state.register)
+async def login_or_signup(msg: Message):
     chat_id = msg.chat.id
     user_id = msg.from_user.id
-    if msg.text != "Login":
-        await bot.send_message(chat_id, "Please choose from keyboard")
-    else:
-
+    username = msg.from_user.username
+    if msg.text == "Sign up📝":
+        mark_up = lang_keyboard()
+        await bot.send_message(chat_id, __('lang', 'en'), reply_markup=mark_up)
+        await bot.set_state(user_id, reg_state.lang, chat_id)
+    if msg.text == "Log in📥":
         await bot.send_message(chat_id, "Please Send your username/email", reply_markup=ReplyKeyboardRemove())
         await bot.set_state(user_id, sts.username, chat_id)
 
@@ -64,19 +68,65 @@ async def get_password(msg: Message):
     user_id = msg.from_user.id
     async with bot.retrieve_data(user_id, chat_id) as data:
         query = select(User).where(or_(User.email == data["username"], User.username == data["username"]))
+
     async with Session.begin() as conn:
         user = (await conn.execute(query)).scalar()
-        if check_password_hash(user.password, msg.text) and not user.logged:
-            query = update(User).where(User.id == user.id).values(telegram_id=user_id, logged=True)
-            await conn.execute(query)
-            await conn.commit()
+        session_query = select(UserSessions).where(and_(UserSessions.telegram_id == user_id, user_id == user.id))
+        session = (await conn.execute(session_query)).scalar()
+        if check_password_hash(user.password, msg.text):
+            if session is None:
+                user_ses = UserSessions(telegram_id=user_id, user_id=user.id, logged=True)
+                conn.add(user_ses)
+                await conn.commit()
+            else:
+                user_ses = update(UserSessions).where(UserSessions.telegram_id == user_id).values(logged=True)
+                await conn.execute(user_ses)
+                await conn.commit()
             await bot.send_message(chat_id, "You are now loggen in", reply_markup=menu())
             await bot.delete_state(user_id, chat_id)
-
 
         else:
             await bot.send_message(chat_id, "Please re-enter your username/email and password")
             await bot.set_state(user_id, sts.username, chat_id)
+
+
+# ==============================================================================
+#                                     Main-Menu                                #
+# ==============================================================================
+
+
+@bot.message_handler(func=lambda message: message.text in main_menu_list, state=sts.menu)
+async def main_menu(message: Message):
+    # handling part
+
+    chat_id = message.chat.id
+    user_id = message.from_user.id
+    message_id = message.message_id
+    text = message.text
+    tg_user_query = select(UserSessions).where(UserSessions.telegram_id == user_id)
+    async with Session.begin() as db:
+        tg_user = (await db.execute(tg_user_query)).scalar()
+        user_query = select(User).where(User.id == tg_user.id)
+        user = (await db.execute(user_query)).scalar()
+        lang = user.lang
+
+    if '⛳️' in text:
+        await bot.delete_message(chat_id, message_id)
+        await bot.set_state(user_id, sts.category, chat_id)
+
+    if '🏘' in text:
+        mark_up = settings_default(lang)
+        await bot.set_state(user_id, sts.settings, chat_id)
+        async with bot.retrieve_data(user_id, chat_id) as data:
+            data['step'] = [f'setting|{0}']
+
+    if '✍️' in text:
+        mark_up = back_basket(lang=lang, basket=False)
+        await bot.delete_message(chat_id, message_id)
+        await bot.send_message(chat_id, __('send_feedbacks', lang), reply_markup=mark_up)
+        await bot.set_state(user_id, sts.feedback, chat_id)
+        async with bot.retrieve_data(user_id, chat_id) as data:
+            data['step'] = [f'feedbacks|{0}']
 
 
 # ==============================================================================
@@ -100,10 +150,13 @@ async def get_order_id(msg: Message):
     user_id = msg.from_user.id
     order_id = int(msg.text)
     query = select(Order).where(Order.id == order_id)
-    user_query = select(User).where(User.telegram_id == user_id)
+    tg_user_query = select(UserSessions).where(UserSessions.telegram_id == user_id)
 
     async with Session.begin() as db:
+        tg_user = (await db.execute(tg_user_query)).scalar()
+        user_query = select(User).where(User.id == tg_user.id)
         user = (await db.execute(user_query)).scalar()
+
         order = (await db.execute(query)).scalar()
         if order is None:
             await bot.send_message(chat_id,
@@ -145,15 +198,18 @@ async def add_order(msg: Message):
 async def get_order_info_in_json(msg: Message):
     user_id = msg.from_user.id
     chat_id = msg.chat.id
-    user_query = select(User.id).where(User.telegram_id == user_id)
     text = msg.text.replace('\'', '"')
+    tg_user_query = select(UserSessions).where(UserSessions.telegram_id == user_id)
+
     try:
         order = json.loads(text)
         order = OrderModel(**order)
 
         async with Session.begin() as db:
-            users_id = (await db.execute(user_query)).scalar()
-            new_order = Order(status=order.status, user_id=users_id, stadium_id=order.stadium_id,
+            tg_user = (await db.execute(tg_user_query)).scalar()
+            user_query = select(User).where(User.id == tg_user.id)
+            user = (await db.execute(user_query)).scalar()
+            new_order = Order(status=order.status, user_id=user.id, stadium_id=order.stadium_id,
                               start_time=order.start_time, hour=order.hour)
             db.add(new_order)
             await db.commit()
@@ -170,8 +226,8 @@ async def get_order_info_in_json(msg: Message):
 async def update_order(msg: Message):
     chat_id = msg.chat.id
     user_id = msg.from_user.id
-    user_query = select(User.id).where(User.telegram_id == user_id)
     text = msg.text.replace('\'', '"')
+    tg_user_query = select(UserSessions).where(UserSessions.telegram_id == user_id)
     try:
         order = json.loads(text)
         async with bot.retrieve_data(user_id, chat_id) as data:
@@ -179,10 +235,12 @@ async def update_order(msg: Message):
             message_id = data["message"]
         order_query = select(Order).where(Order.id == int(order_id))
         async with Session.begin() as db:
-            users_id = (await db.execute(user_query)).scalar()
+            tg_user = (await db.execute(tg_user_query)).scalar()
+            user_query = select(User).where(User.id == tg_user.id)
+            user = (await db.execute(user_query)).scalar()
 
             stadium_update_q = update(Order).where(
-                and_(Order.id == order_id, Order.user_id == users_id)).values(**order)
+                and_(Order.id == order_id, Order.user_id == user.id)).values(**order)
             await db.execute(stadium_update_q)
             await db.commit()
         async with Session.begin() as db:
@@ -215,9 +273,11 @@ async def update_order(msg: Message):
 async def list_orders(msg: Message):
     user_id = msg.from_user.id
     chat_id = msg.chat.id
-    user_query = select(User).where(User.telegram_id == user_id)
     orders_query = select(Order)
     async with Session.begin() as db:
+        tg_user_query = select(UserSessions).where(UserSessions.telegram_id == user_id)
+        tg_user = (await db.execute(tg_user_query)).scalar()
+        user_query = select(User).where(User.id == tg_user.id)
         user = (await db.execute(user_query)).scalar()
         if user is None or not user.is_staff:
             await bot.send_message(chat_id, "You are not permitted to use this command", reply_markup=menu())
@@ -251,9 +311,11 @@ async def get_stadium_id(msg: Message):
     user_id = msg.from_user.id
     stadium_id = int(msg.text) if msg.text.isdigit() else msg.text
     query = select(Stadium).where(or_(Stadium.id == stadium_id, Stadium.name == stadium_id))
-    user_query = select(User).where(User.telegram_id == user_id)
 
     async with Session.begin() as db:
+        tg_user_query = select(UserSessions).where(UserSessions.telegram_id == user_id)
+        tg_user = (await db.execute(tg_user_query)).scalar()
+        user_query = select(User).where(User.id == tg_user.id)
         user = (await db.execute(user_query)).scalar()
         stadium = (await db.execute(query)).scalar()
         if stadium is None:
@@ -304,13 +366,15 @@ async def add_stadium(msg: Message):
 async def get_stadium_info_in_json(msg: Message):
     user_id = msg.from_user.id
     chat_id = msg.chat.id
-    user_query = select(User.id).where(User.telegram_id == user_id)
     text = msg.text.replace('\'', '"')
     try:
         stadium = json.loads(text)
         stadium = StadiumModel(**stadium)
 
         async with Session.begin() as db:
+            tg_user_query = select(UserSessions).where(UserSessions.telegram_id == user_id)
+            tg_user = (await db.execute(tg_user_query)).scalar()
+            user_query = select(User.id).where(User.id == tg_user.id)
             users_id = (await db.execute(user_query)).scalar()
             new_stadium = Stadium(
                 name=stadium.name, description=stadium.description, image_url=stadium.image_url, price=stadium.price,
@@ -332,9 +396,11 @@ async def get_stadium_info_in_json(msg: Message):
 async def list_stadiums(msg: Message):
     user_id = msg.from_user.id
     chat_id = msg.chat.id
-    user_query = select(User).where(User.telegram_id == user_id)
     stadiums_query = select(Stadium)
     async with Session.begin() as db:
+        tg_user_query = select(UserSessions).where(UserSessions.telegram_id == user_id)
+        tg_user = (await db.execute(tg_user_query)).scalar()
+        user_query = select(User).where(User.id == tg_user.id)
         user = (await db.execute(user_query)).scalar()
         if user is None:
             await bot.send_message(chat_id, "You are not permitted to use this command", reply_markup=menu())
@@ -354,7 +420,6 @@ async def list_stadiums(msg: Message):
 async def update_stadium(msg: Message):
     chat_id = msg.chat.id
     user_id = msg.from_user.id
-    user_query = select(User.id).where(User.telegram_id == user_id)
     text = msg.text.replace('\'', '"')
     try:
         stadium = json.loads(text)
@@ -363,6 +428,9 @@ async def update_stadium(msg: Message):
             message_id = data["message"]
         stadium_query = select(Stadium).where(Stadium.id == int(stadium_id))
         async with Session.begin() as db:
+            tg_user_query = select(UserSessions).where(UserSessions.telegram_id == user_id)
+            tg_user = (await db.execute(tg_user_query)).scalar()
+            user_query = select(User.id).where(User.id == tg_user.id)
             users_id = (await db.execute(user_query)).scalar()
 
             stadium_update_q = update(Stadium).where(

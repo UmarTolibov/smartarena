@@ -1,5 +1,5 @@
 from database.connection import Session
-from database import User, Stadium, Order
+from database import User, Stadium, Order, UserSessions
 from sqlalchemy.sql import select, delete, or_, and_
 
 from bot.loader import bot, sts
@@ -15,11 +15,12 @@ async def delete_stadium(call: CallbackQuery):
     user_id = call.from_user.id
     stadium_id = int(call.data.split('|')[1])
     async with Session.begin() as db:
+        tg_user_query = select(UserSessions).where(UserSessions.telegram_id == user_id)
+        tg_user = (await db.execute(tg_user_query)).scalar()
         stadium_get_query = select(Stadium.user_id).where(Stadium.id == stadium_id)
         stadium_del_query = delete(Stadium).where(Stadium.id == stadium_id)
         stadium = (await db.execute(stadium_get_query)).scalar()
-        user_query = select(User).where(
-            or_(and_(User.telegram_id == user_id, stadium == User.id), User.is_staff))
+        user_query = select(User).where(or_(and_(User.id == tg_user.id, stadium == User.id), User.is_staff))
         user = (await db.execute(user_query)).scalar()
         if user:
             await db.execute(stadium_del_query)
@@ -47,9 +48,10 @@ async def edit_stadium(call: CallbackQuery):
         async with Session.begin() as db:
             stadium_get_query = select(Stadium).where(Stadium.id == stadium_id)
             stadium = (await db.execute(stadium_get_query)).scalar()
-
+            tg_user_query = select(UserSessions).where(UserSessions.telegram_id == user_id)
+            tg_user = (await db.execute(tg_user_query)).scalar()
             user_query = select(User).where(
-                or_(and_(User.telegram_id == user_id, stadium.user_id == User.id), User.is_staff))
+                or_(and_(User).where(User.id == tg_user.id, stadium.user_id == User.id), User.is_staff))
 
             user = (await db.execute(user_query)).scalar()
             if user:
@@ -76,8 +78,10 @@ async def delete_stadium(call: CallbackQuery):
         order_get_query = select(Order.user_id).where(Order.id == order_id)
         order_del_query = delete(Order).where(Order.id == order_id)
         order = (await db.execute(order_get_query)).scalar()
+        tg_user_query = select(UserSessions).where(UserSessions.telegram_id == user_id)
+        tg_user = (await db.execute(tg_user_query)).scalar()
         user_query = select(User).where(
-            or_(and_(User.telegram_id == user_id, order == User.id), User.is_staff))
+            or_(and_(User.id == tg_user.id, order == User.id), User.is_staff))
         user = (await db.execute(user_query)).scalar()
         if user:
             await db.execute(order_del_query)
@@ -105,9 +109,10 @@ async def edit_order(call: CallbackQuery):
         async with Session.begin() as db:
             order_get_query = select(Order).where(Order.id == order_id)
             order = (await db.execute(order_get_query)).scalar()
-
+            tg_user_query = select(UserSessions).where(UserSessions.telegram_id == user_id)
+            tg_user = (await db.execute(tg_user_query)).scalar()
             user_query = select(User).where(
-                or_(and_(User.telegram_id == user_id, order.user_id == User.id), User.is_staff))
+                or_(and_(User.id == tg_user.id, order.user_id == User.id), User.is_staff))
 
             user = (await db.execute(user_query)).scalar()
             if user:

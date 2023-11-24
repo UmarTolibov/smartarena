@@ -1,4 +1,5 @@
 from .commands import *
-from .text_messages import *
-
+from .text import *
+from .callbacks import *
+from .registration import *
 
