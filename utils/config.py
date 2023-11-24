@@ -4,7 +4,7 @@ TOKEN = "6262727985:AAE3r4pe-71tWcIEUNOTVenxbz49_rOBoxU"
 WEBHOOK_PATH = f"/webhook/{TOKEN}/"
 PRODUCTION_URL = "https://smartarena-bbff190dd374.herokuapp.com"
 TEST_URL = "https://04e2-45-150-26-184.ngrok.io"
-WEBHOOK_URL = TEST_URL + WEBHOOK_PATH
+WEBHOOK_URL = PRODUCTION_URL + WEBHOOK_PATH
 SLI_TOKEN = "gnTHhoTY_GAgN29Beg49BRNybun9uwSqu9HFdYRF6"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
