@@ -13,17 +13,17 @@ async def greeting(message: Message):
     markup = login_signup()
     try:
         async with Session.begin() as db:
-            user_check_q = select(User.id, User.username).join(UserSessions, User.id == UserSessions.user_id).where(
+            user_check_q = select(User.username, User.id).join(UserSessions, User.id == UserSessions.user_id).where(
                 UserSessions.telegram_id == user_id)
-            user_check = (await db.execute(user_check_q)).scalars()
-            if len(user_check.all()) >= 2:
-                markup = accounts_inline(user_check.all())
+            user_check = (await db.execute(user_check_q)).fetchall()
+            if len(user_check) >= 2:
+                markup = accounts_inline(user_check)
                 await bot.send_message(chat_id, "Qaysi akkaunt bilan davom ettirmoqchisiz?", reply_markup=markup)
                 await bot.set_state(user_id, chat_id)
             else:
                 async with bot.retrieve_data(user_id, chat_id) as data:
                     data["user_id"] = user_check.first().id
-                await bot.send_message(chat_id, f"Salom {user_check.first().username}", reply_markup=main_menu_markup())
+                await bot.send_message(chat_id, f"Salom {user_check[0].username}", reply_markup=main_menu_markup())
                 await bot.set_state(user_id, user_sts.main, chat_id)
     except Exception as e:
         print(e)

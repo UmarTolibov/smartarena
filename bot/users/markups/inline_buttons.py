@@ -10,7 +10,7 @@ def confirmation():
     return markup
 
 
-def regions_inline():
+def regions_inline(for_add=0):
     markup = InlineKeyboardMarkup(row_width=2)
     with open("bot/users/markups/regions.json", "r", encoding="utf-8") as data:
         regions = json.load(data)["regions"]
@@ -21,13 +21,16 @@ def regions_inline():
                 region = regions[i + j]
                 region_id = region["id"]
                 region_name = region["name"]
-                row_buttons.append(InlineKeyboardButton(region_name, callback_data=f"region|{region_id}"))
+                if for_add == 0:
+                    row_buttons.append(InlineKeyboardButton(region_name, callback_data=f"region|{region_id}"))
+                elif for_add == 1:
+                    row_buttons.append(InlineKeyboardButton(region_name, callback_data=f"add_region|{region_id}"))
 
         markup.row(*row_buttons)
     return markup
 
 
-def district_inline(region_id):
+def district_inline(region_id, for_add=0):
     markup = InlineKeyboardMarkup(row_width=2)
 
     with open("bot/users/markups/regions.json", "r", encoding="utf-8") as data:
@@ -38,7 +41,11 @@ def district_inline(region_id):
         if district["region_id"] == region_id:
             district_id = district["id"]
             district_name = district["name"]
-            row_buttons.append(InlineKeyboardButton(district_name, callback_data=f"district|{district_id}"))
+            if for_add == 0:
+                row_buttons.append(InlineKeyboardButton(district_name, callback_data=f"district|{district_id}"))
+            else:
+                row_buttons.append(InlineKeyboardButton(district_name, callback_data=f"add_district|{district_id}"))
+
             if len(row_buttons) == 2:
                 markup.row(*row_buttons)
                 row_buttons = []
@@ -49,7 +56,7 @@ def district_inline(region_id):
     return markup
 
 
-def start_time_inline():
+def start_time_inline(for_add=0):
     markup = InlineKeyboardMarkup(row_width=3)
 
     # Define a list of day times
@@ -58,7 +65,13 @@ def start_time_inline():
 
     row_buttons = []
     for time in day_times:
-        row_buttons.append(InlineKeyboardButton(time, callback_data=f"start_time|{time}"))
+        if for_add == 0:
+            row_buttons.append(InlineKeyboardButton(time, callback_data=f"start_time|{time}"))
+        elif for_add == 1:
+            row_buttons.append(InlineKeyboardButton(time, callback_data=f"s_time|{time}"))
+        else:
+            row_buttons.append(InlineKeyboardButton(time, callback_data=f"c_time|{time}"))
+
         if len(row_buttons) == 3:
             markup.row(*row_buttons)
             row_buttons = []
@@ -92,8 +105,16 @@ def stadiums_inline(stadiums):
 def accounts_inline(accounts):
     markup = InlineKeyboardMarkup()
     row_buttons = []
-    for account in accounts:
-        row_buttons.append(InlineKeyboardButton(account.username, callback_data=f"account|{account.id}"))
+    for username, user_id in accounts:
+        row_buttons.append(InlineKeyboardButton(username, callback_data=f"account|{user_id}"))
         if len(row_buttons) == 2:
             markup.row(*row_buttons)
             row_buttons = []
+    return markup
+
+
+def yes_no_inline():
+    markup = InlineKeyboardMarkup()
+    markup.row(InlineKeyboardButton("Ha✅", callback_data="proceed|1"),
+               InlineKeyboardButton("Yo'q❌", callback_data="proceed|0"))
+    return markup

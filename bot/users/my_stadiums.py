@@ -1,0 +1,193 @@
+from datetime import datetime
+from telebot.asyncio_helper import ApiException
+import fastapi.encoders
+from sqlalchemy import select, func
+from sqlalchemy.orm import aliased
+from telebot.types import Message, ReplyKeyboardRemove, CallbackQuery, Location, Document
+from bot.loader import bot, auth_sts, user_sts, stadium_sts
+from database import Session, Stadium, Order
+from .markups.buttons import *
+from .markups.inline_buttons import *
+
+
+@bot.message_handler(regexp="🏟️Stadionlarim")
+async def my_stadium_handler(message: Message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id
+    await bot.send_message(chat_id, "Stadionlar", reply_markup=your_stadiums_markup())
+    await bot.set_state(user_id, stadium_sts.init, chat_id)
+
+
+@bot.message_handler(regexp="🌐Stadion qo'shish", state=stadium_sts.init)
+async def add_stadium_handler(message: Message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id
+    await bot.send_message(chat_id, """<b>Stadion yaratish uchun quydagi malumotlar kerak boladi</b>
+<i>Stadion Nomi__________</i>
+<i>Stadion Haqida________</i>
+<i>Stadion Rasmlar_______</i>
+<i>Narxi (soatiga)_______</i>
+<i>Ochilish vaqti________</i>
+<i>Yopilish vaqti________</i>
+<i>Viloyat_______________</i>
+<i>Tuman_________________</i>
+<i>Lakatsiya_____________</i>""", reply_markup=back(), parse_mode="html")
+    await bot.send_message(chat_id, "Davom ettirasizmi?", reply_markup=yes_no_inline())
+
+
+@bot.callback_query_handler(func=lambda call: "proceed" in call.data.split("|"))
+async def proceed_yes_no(call: CallbackQuery):
+    chat_id = call.message.chat.id
+    user_id = call.from_user.id
+    answer = bool(call.data.split("|")[1])
+    if answer:
+        await bot.answer_callback_query(call.id, "Malumotlarni kirishda hushyor bo'lishingizni so'rab qolamiz",
+                                        show_alert=True)
+        await bot.send_message(chat_id, "Stadion nomini kiriting")
+        await bot.set_state(user_id, stadium_sts.name, chat_id)
+    else:
+        await bot.answer_callback_query(call.id, "Bekor qilindi", )
+        await bot.send_message(chat_id, "Bosh sahifa", reply_markup=main_menu_markup())
+
+
+@bot.message_handler(content_types=["text"], state=stadium_sts.name)
+async def stadium_name_handler(message: Message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id
+    async with bot.retrieve_data(user_id, chat_id) as data:
+        data["stadium_name"] = message.text
+    await bot.send_message(chat_id, "Stadion haqida ma'lumot jo'nating")
+    await bot.set_state(user_id, stadium_sts.description, chat_id)
+
+
+@bot.message_handler(content_types=["text"], state=stadium_sts.description)
+async def stadium_desc_handler(message: Message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id
+    async with bot.retrieve_data(user_id, chat_id) as data:
+        data["stadium_description"] = message.text
+    await bot.send_message(chat_id, "Stadion uchun rasm yoki rasm url ni jo'nating")
+    await bot.set_state(user_id, stadium_sts.image, chat_id)
+
+
+@bot.message_handler(content_types=["text", "photo", "document"], state=stadium_sts.image)
+async def stadium_image_handler(message: Message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id
+    async with bot.retrieve_data(user_id, chat_id) as data:
+        if message.content_type == "text":
+            data["stadium_photo"] = message.text
+        elif message.content_type == "photo":
+            data["stadium_photo"] = message.photo[-1].file_id
+        else:
+            data["stadium_photo"] = "str(message.document.file_id)"
+            print(data["stadium_photo"])
+            # await bot.send_photo(chat_id, message.document.file_id)
+    await bot.send_message(chat_id, "Stadion narxi - So'm/soat")
+    await bot.set_state(user_id, stadium_sts.price, chat_id)
+
+
+@bot.message_handler(content_types=["text"], state=stadium_sts.price)
+async def stadium_price_handler(message: Message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id
+    async with bot.retrieve_data(user_id, chat_id) as data:
+        data["stadium_price"] = message.text
+    await bot.send_message(chat_id, "Stadioning ochilish vaqti🕒", reply_markup=start_time_inline(1))
+    await bot.set_state(user_id, stadium_sts.open_time, chat_id)
+
+
+@bot.callback_query_handler(func=lambda call: "s_time" in call.data.split("|"), state=stadium_sts.open_time)
+async def stadium_open_time_handler(call: CallbackQuery):
+    chat_id = call.message.chat.id
+    user_id = call.from_user.id
+    async with bot.retrieve_data(user_id, chat_id) as data:
+        data["stadium_open_time"] = call.data.split("|")[1]
+        await bot.answer_callback_query(call.id, f"Ochilish vaqti: {call.data.split('|')[1]}")
+        await bot.edit_message_text("Stadionning Yopilish Vaqti🕟:", chat_id, call.message.message_id,
+                                    reply_markup=start_time_inline(2))
+        await bot.set_state(user_id, stadium_sts.close_time, chat_id)
+
+
+@bot.callback_query_handler(func=lambda call: "c_time" in call.data.split("|"), state=stadium_sts.close_time)
+async def stadium_close_time_handler(call: CallbackQuery):
+    chat_id = call.message.chat.id
+    user_id = call.from_user.id
+    async with bot.retrieve_data(user_id, chat_id) as data:
+        data["stadium_close_time"] = call.data.split("|")[1]
+        await bot.answer_callback_query(call.id, f"Yopilish vaqti: {call.data.split('|')[1]}")
+        await bot.edit_message_text("Stadion joylashgan Viloyat", chat_id, call.message.message_id,
+                                    reply_markup=regions_inline(1))
+        await bot.set_state(user_id, stadium_sts.region, chat_id)
+
+
+@bot.callback_query_handler(func=lambda call: "add_region" in call.data.split('|'), state=stadium_sts.region)
+async def stadium_region_handler(call: CallbackQuery):
+    chat_id = call.message.chat.id
+    user_id = call.from_user.id
+    region_id = int(call.data.split("|")[1])
+    markup = district_inline(region_id, 1)
+    async with bot.retrieve_data(user_id, chat_id) as data:
+        data["stadium_region"] = region_id
+        with open("bot/users/markups/regions.json", "r", encoding="utf-8") as file:
+            region = json.load(file)["regions"][region_id - 1]
+        data["region_name"] = region['name']
+    await bot.edit_message_text("Tumanni tanlang", chat_id, call.message.message_id, reply_markup=markup)
+    await bot.set_state(user_id, stadium_sts.district, chat_id)
+
+
+@bot.callback_query_handler(func=lambda call: "add_district" in call.data.split('|'), state=stadium_sts.district)
+async def district_choose(call: CallbackQuery):
+    chat_id = call.message.chat.id
+    user_id = call.from_user.id
+    district_id = int(call.data.split("|")[1])
+    markup = start_time_inline()
+    async with bot.retrieve_data(user_id, chat_id) as data:
+        data["stadium_district"] = district_id
+        with open("bot/users/markups/regions.json", "r", encoding="utf-8") as file:
+            district = json.load(file)["districts"][district_id - 15]
+            data["district_name"] = district['name']
+    await bot.send_message(chat_id, "Stadion joylashux nuqtasini(lokatsya) jo'nating", reply_markup=request_location())
+    await bot.set_state(user_id, stadium_sts.location, chat_id)
+
+
+@bot.message_handler(content_types=["location"], state=stadium_sts.location)
+async def stadium_location_handler(message: Message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id
+    async with bot.retrieve_data(user_id, chat_id) as data:
+        data["location_data"] = message.location.to_dict()
+        name = data["stadium_name"]
+        desc = data["stadium_description"]
+        image = data["stadium_photo"]
+        price = int(data["stadium_price"])
+        open_time = data["stadium_open_time"]
+        close_time = data["stadium_close_time"]
+        region_id = data["stadium_region"]
+        region = data["region_name"]
+        district_id = data["stadium_district"]
+        district = data["district_name"]
+        location = data["location_data"]
+        owner = data["user_id"]
+
+    stadium_data = f"""<b>Nomi:</b> <code>{name}</code>
+<b>Stadion haqida:</b><code>{desc}</code>
+<b>Narxi:</b> <code>{price} </code>so'm/soat
+<b>Ochilish vaqti:</b><code> {open_time}</code>
+<b>Yopilish vaqti:</b> <code>{close_time}</code>
+<b>Viloyat/shahar:</b> <code>{region}</code>
+<b>Tuman:</b> <code>{district}</code>"""
+    await bot.send_message(chat_id, "Stadion Malumotlarini Tasdiqlang:", reply_markup=ReplyKeyboardRemove())
+    await bot.send_message(chat_id, f"{stadium_data}",
+                           reply_markup=confirmation(), parse_mode="html")
+    await bot.set_state(user_id, stadium_sts.confirm, chat_id)
+
+
+@bot.callback_query_handler(func=lambda call: True, state=stadium_sts.confirm)
+async def stadium_confirmation_handler(callback: CallbackQuery):
+    chat_id = callback.message.chat.id
+    user_id = callback.from_user.id
+    if callback.data == "confirm":
+        pass
+    if callback.data == "reject":
+        pass

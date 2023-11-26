@@ -54,7 +54,7 @@ async def password_handler(message: Message):
                f"<br><b>Telefon raqami:</b> <code>{number}</code>" \
                f"<br><b>Parol:</b> <code>{message.text}</code>"
 
-    await bot.send_message(chat_id, text, reply_markup=confirmation())
+    await bot.send_message(chat_id, text, reply_markup=confirmation(), parse_mode="html")
     await bot.set_state(user_id, auth_sts.confirm, chat_id)
 
 
@@ -117,8 +117,7 @@ async def login_username(message: Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
     async with Session() as db:
-        user_q = select(User).join(User.sessions).where(
-            (UserSessions.telegram_id == user_id) & (User.username == message.text))
+        user_q = select(User).where(User.username == message.text)
         user = (await db.execute(user_q)).scalar()
         if user is None:
             await bot.send_message(chat_id, "Bunday Username mavjud emas!", reply_markup=login_signup())
@@ -137,16 +136,19 @@ async def _login_password(message: Message):
     chat_id = message.chat.id
     password = message.text
     async with bot.retrieve_data(user_id, chat_id) as data:
-        user_q = select(User).join(User.sessions).where(
-            (UserSessions.telegram_id == user_id) & (User.username == data["username"]))
+        user_q = select(User).where(User.username == data["username"])
 
     async with Session() as db:
         user = (await db.execute(user_q)).scalar()
+        session = (await db.execute(select(UserSessions).where(UserSessions.user_id == user.id))).scalar()
         data["user_id"] = user.id
         if user and check_password_hash(user.password, password):
-            new_session = UserSessions(user_id=user.id, telegram_id=user_id)
-            db.add(new_session)
-            await db.commit()
+            try:
+                new_session = UserSessions(user_id=user.id, telegram_id=user_id)
+                db.add(new_session)
+                await db.commit()
+            except IntegrityError as e:
+                print(e)
             await bot.send_message(chat_id, "Tizimga kirdingiz!", reply_markup=main_menu_markup())
             await bot.set_state(user_id, user_sts.main, chat_id)
         else:

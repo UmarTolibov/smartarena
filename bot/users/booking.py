@@ -63,7 +63,6 @@ async def hour_choose(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
     hour = int(call.data.split("|")[1])
-    markup = hours_inline()
     async with bot.retrieve_data(user_id, chat_id) as data:
         data["hour"] = hour
         region_filter = data["region_name"]
@@ -71,6 +70,7 @@ async def hour_choose(call: CallbackQuery):
         start_time_str = data["start_time"]
         start_time_filter = datetime.strptime(start_time_str, "%H:%M")
         hour_filter = data["hour"]
+    await bot.answer_callback_query(call.id, "Stadionlar")
     # await bot.edit_message_text("Nechchi soat", chat_id, call.message.message_id, reply_markup=markup)
     async with Session() as session:
         order_alias = aliased(Order)
@@ -85,4 +85,5 @@ async def hour_choose(call: CallbackQuery):
 
         result = await session.execute(query)
         stadiums = result.scalars().all()
-        await bot.send_message(chat_id, "Stadionlar:", reply_markup=stadiums_inline(stadiums))
+        await bot.send_message(chat_id, "Stadionlar", reply_markup=main_menu_markup())
+        await bot.send_message(chat_id, "Tanlang", reply_markup=stadiums_inline(stadiums))

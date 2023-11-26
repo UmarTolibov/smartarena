@@ -2,7 +2,7 @@ import json
 
 from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, reconstructor
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy import Enum as SqlEnum
 from datetime import datetime, timedelta
 from typing import List
@@ -65,7 +65,7 @@ class User(Base):
     orders: Mapped[List["Order"]] = relationship(back_populates="user")
 
     def __repr__(self):
-        return f"<User {self.email}>"
+        return f"<User {self.username}>"
 
 
 class UserSessions(Base):
@@ -75,6 +75,7 @@ class UserSessions(Base):
     logged: Mapped[bool] = mapped_column(default=False)
     user_id: Mapped[int] = mapped_column(ForeignKey(User.id), nullable=True)
     user: Mapped["User"] = relationship(User, back_populates="sessions")
+    __table_args__ = (UniqueConstraint('telegram_id', 'user_id', name='telegram_user_uc'),)
 
 
 class Stadium(Base):

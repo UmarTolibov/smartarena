@@ -15,3 +15,17 @@ class Auth(StatesGroup):
 class UserState(StatesGroup):
     main = State()
     region = State()
+
+
+class StadiumState(StatesGroup):
+    init = State()
+    name = State()
+    description = State()
+    image = State()
+    price = State()
+    open_time = State()
+    close_time = State()
+    region = State()
+    district = State()
+    location = State()
+    confirm = State()

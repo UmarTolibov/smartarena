@@ -3,7 +3,7 @@ from telebot.asyncio_storage import StateMemoryStorage
 from telebot import asyncio_filters
 from telebot.types import Update, BotCommand
 
-from .states import Auth, UserState
+from .states import Auth, UserState, StadiumState
 from .antiflood import SimpleMiddleware
 from utils import TOKEN
 
@@ -13,6 +13,8 @@ bot.add_custom_filter(asyncio_filters.ChatFilter())
 bot.setup_middleware(SimpleMiddleware(2, bot))
 auth_sts = Auth()
 user_sts = UserState()
+stadium_sts = StadiumState()
+
 
 async def bot_meta():
     await bot.delete_my_commands()
