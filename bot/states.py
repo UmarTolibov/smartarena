@@ -3,6 +3,7 @@ from telebot.asyncio_handler_backends import State, StatesGroup
 
 class Auth(StatesGroup):
     init = State()
+    account = State()
     name = State()
     number = State()
     password = State()
@@ -13,3 +14,4 @@ class Auth(StatesGroup):
 
 class UserState(StatesGroup):
     main = State()
+    region = State()

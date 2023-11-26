@@ -126,6 +126,7 @@ async def login_username(message: Message):
         else:
             async with bot.retrieve_data(user_id, chat_id) as data:
                 data["username"] = message.text
+                data["attempts"] = 0
             await bot.send_message(chat_id, "Parolni kiriting!")
             await bot.set_state(user_id, auth_sts.login_password, chat_id)
 
@@ -135,21 +136,27 @@ async def _login_password(message: Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
     password = message.text
-    async with Session() as db:
-        async with bot.retrieve_data(user_id, chat_id) as data:
-            user_q = select(User).join(User.sessions).where(
-                (UserSessions.telegram_id == user_id) & (User.username == data["username"]))
+    async with bot.retrieve_data(user_id, chat_id) as data:
+        user_q = select(User).join(User.sessions).where(
+            (UserSessions.telegram_id == user_id) & (User.username == data["username"]))
 
-            user = (await db.execute(user_q)).scalar()
-            if user and check_password_hash(user.password, password):
-                new_session = UserSessions(user_id=user.id, telegram_id=user_id)
-                db.add(new_session)
-                await db.commit()
-                data["user_id"] = user.id
-                await bot.send_message(chat_id, "Tizimga kirdingiz!", reply_markup=main_menu_markup())
-                await bot.set_state(user_id, user_sts.main, chat_id)
-            else:
-                await bot.send_message(chat_id, "Parol noto\'g\'ri!")
+    async with Session() as db:
+        user = (await db.execute(user_q)).scalar()
+        data["user_id"] = user.id
+        if user and check_password_hash(user.password, password):
+            new_session = UserSessions(user_id=user.id, telegram_id=user_id)
+            db.add(new_session)
+            await db.commit()
+            await bot.send_message(chat_id, "Tizimga kirdingiz!", reply_markup=main_menu_markup())
+            await bot.set_state(user_id, user_sts.main, chat_id)
+        else:
+            await bot.send_message(chat_id, "Parol noto\'g\'ri!")
+            async with bot.retrieve_data(user_id, chat_id) as data:
+                data["attempts"] += 1
+                if data["attempts"] >= 3:
+                    await bot.send_message(chat_id, "Iltimos keyinroq urinib koring!", reply_markup=login_signup())
+                    await bot.set_state(user_id, auth_sts.init, chat_id)
+                    data["attempts"] = 0
 
 
 @bot.message_handler(commands=["logout"], state='*')

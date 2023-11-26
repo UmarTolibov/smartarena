@@ -15,7 +15,7 @@ def number_request():
 
 def main_menu_markup():
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.row(KeyboardButton("🏟️ Bron qilish "), KeyboardButton("📅 Buyurtmalarni Ko'rish"))
+    markup.row(KeyboardButton("📆Bron qilish "), KeyboardButton("📅 Buyurtmalarni Ko'rish"))
     markup.row(KeyboardButton("🏟️Stadiuonlarim"), KeyboardButton("⚙️Sozlanmalar"))
     markup.row(KeyboardButton("ℹ️Yordam"))
     return markup

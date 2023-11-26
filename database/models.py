@@ -3,8 +3,29 @@ import json
 from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, reconstructor
 from sqlalchemy import ForeignKey
+from sqlalchemy import Enum as SqlEnum
 from datetime import datetime, timedelta
 from typing import List
+from enum import Enum
+
+with open("bot/users/markups/regions.json", "r", encoding="utf-8") as json_file:
+    data = json.load(json_file)
+
+
+# Create Enum classes dynamically for regions and districts
+class RegionEnum(Enum):
+    pass
+
+
+class DistrictEnum(Enum):
+    pass
+
+
+for region in data.get("regions", []):
+    setattr(RegionEnum, region["name"].replace(" ", "_"), region["name"])
+
+for district in data.get("districts", []):
+    setattr(DistrictEnum, district["name"].replace(" ", "_"), district["name"])
 
 
 class Base(DeclarativeBase):
@@ -66,8 +87,8 @@ class Stadium(Base):
     opening_time: Mapped[str] = mapped_column(default="08:00:00")
     closing_time: Mapped[str] = mapped_column(default="00:00:00")
     is_active: Mapped[bool] = mapped_column(default=False)
-    region: Mapped[str] = mapped_column()
-    district: Mapped[str] = mapped_column()
+    region: Mapped[str] = mapped_column(SqlEnum(RegionEnum))
+    district: Mapped[str] = mapped_column(SqlEnum(DistrictEnum))
     location: Mapped[dict] = mapped_column(JSON, default={"longitude": 0, "latitude": 0})
     number_of_orders: Mapped[int] = mapped_column(default=0)
     # relationships
