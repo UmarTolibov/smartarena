@@ -1,4 +1,4 @@
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete
 from telebot.types import Message, ReplyKeyboardRemove, CallbackQuery
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.exc import IntegrityError
@@ -13,7 +13,7 @@ from database.connection import Session
 async def signup_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
-    await bot.send_message(chat_id, "Ismingizni yuboring.", reply_to_message_id=message.message_id,
+    await bot.send_message(chat_id, "Ism Familyangizni yuboring.", reply_to_message_id=message.message_id,
                            reply_markup=ReplyKeyboardRemove())
     await bot.set_state(user_id, auth_sts.name, chat_id)
 
@@ -49,10 +49,10 @@ async def password_handler(message: Message):
         data["password"] = message.text
         name = data["name"]
         number = data["number"]
-        text = f"Malumotni Tasdiqlang:" \
-               f"\nIsmi: {name}" \
-               f"\nTelefon raqami: {number}" \
-               f"\nParol: {message.text}"
+        text = f"<b>Malumotni Tasdiqlang:</b>" \
+               f"<br><b>Ismi:</b> <code>{name}</code>" \
+               f"<br><b>Telefon raqami:</b> <code>{number}</code>" \
+               f"<br><b>Parol:</b> <code>{message.text}</code>"
 
     await bot.send_message(chat_id, text, reply_markup=confirmation())
     await bot.set_state(user_id, auth_sts.confirm, chat_id)
@@ -76,15 +76,16 @@ async def confirmation_inline(callback: CallbackQuery):
                 db.add(new_user)
                 await db.commit()
                 await db.refresh(new_user)
-                new_session = UserSessions(telegram_id=user_id, logged=True, user_id=new_user.id)
+                user_data["user_id"] = new_user.id
+                new_session = UserSessions(telegram_id=user_id, user_id=new_user.id)
                 db.add(new_session)
                 await db.commit()
                 await bot.answer_callback_query(callback.id, "Tasiqlandi")
                 await bot.send_message(chat_id,
                                        f"Bu ma\'lumotlarni saqlab qoying\n<code>username: {user_data['username']}\npassword: {password}</code>",
-                                       parse_mode="html", reply_markup=None)
-                async with bot.retrieve_data(user_id, chat_id) as data:
-                    data["user_id"] = new_user.id
+                                       parse_mode="html", reply_markup=main_menu_markup())
+            async with bot.retrieve_data(user_id, chat_id) as data:
+                data["user_id"] = user_data["user_id"]
                 await bot.set_state(user_id, user_sts.main, chat_id)
         except IntegrityError as e:
             print(e)
@@ -140,10 +141,34 @@ async def _login_password(message: Message):
                 (UserSessions.telegram_id == user_id) & (User.username == data["username"]))
 
             user = (await db.execute(user_q)).scalar()
-            if user and check_password_hash(user.password, message.text):
-                update(UserSessions).where(UserSessions.user_id == user.id).values(logged=1)
+            if user and check_password_hash(user.password, password):
+                new_session = UserSessions(user_id=user.id, telegram_id=user_id)
+                db.add(new_session)
+                await db.commit()
                 data["user_id"] = user.id
-                await bot.send_message(chat_id, "Tizimga kirdingiz!")
+                await bot.send_message(chat_id, "Tizimga kirdingiz!", reply_markup=main_menu_markup())
                 await bot.set_state(user_id, user_sts.main, chat_id)
             else:
                 await bot.send_message(chat_id, "Parol noto\'g\'ri!")
+
+
+@bot.message_handler(commands=["logout"], state='*')
+async def logout_handler(message: Message):
+    user_id = message.from_user.id
+    chat_id = message.chat.id
+    async with bot.retrieve_data(user_id, chat_id) as data:
+        try:
+            db_user_id = data["user_id"]
+            async with Session.begin() as db:
+                del_query = delete(UserSessions).where(UserSessions.user_id == db_user_id)
+                await db.execute(del_query)
+                await db.commit()
+        except KeyError:
+            async with Session.begin() as db:
+                user_q = select(UserSessions.user_id).where(UserSessions.telegram_id == user_id)
+                user = (await db.execute(user_q)).scalar()
+                del_query = delete(UserSessions).where(UserSessions.user_id == user.id)
+                await db.execute(del_query)
+                await db.commit()
+        except Exception as e:
+            print(e)
