@@ -1,15 +1,14 @@
 import inspect
 import re
-from fastapi import FastAPI, routing, encoders, exceptions, Form, Depends, requests
+from fastapi import FastAPI, routing, encoders, exceptions, Form, Depends
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
-from sqlalchemy import select
 from telebot.types import Update
 # from fastapi.staticfiles import StaticFiles
 # from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import Table
+from database import Order, Base
 from utils import description, MeasureResponseTimeMiddleware, get_db
 from routers import *
 from utils import WEBHOOK_URL, TOKEN
@@ -60,13 +59,6 @@ async def submit_form(name: str = Form(...),
         return {"message": "Done"}
     except Exception as e:
         raise exceptions.HTTPException(401, detail=f"bad request\n{e}")
-
-
-@app.get("/submit_form", include_in_schema=False)
-async def submit_form(db: AsyncSession = Depends(get_db)):
-    query = select(Table)
-    table = (await db.execute(query)).scalars()
-    return encoders.jsonable_encoder({"data": table.all()})
 
 
 @app.exception_handler(exceptions.HTTPException)

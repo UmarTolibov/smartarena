@@ -1,4 +1,4 @@
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, delete
 from telebot.types import Message, ReplyKeyboardRemove, CallbackQuery
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.exc import IntegrityError
@@ -49,10 +49,10 @@ async def password_handler(message: Message):
         data["password"] = message.text
         name = data["name"]
         number = data["number"]
-        text = f"<b>Malumotni Tasdiqlang:</b>" \
-               f"<br><b>Ismi:</b> <code>{name}</code>" \
-               f"<br><b>Telefon raqami:</b> <code>{number}</code>" \
-               f"<br><b>Parol:</b> <code>{message.text}</code>"
+        text = f"""<b>Malumotni Tasdiqlang:</b>" 
+<b>Ismi:</b> <code>{name}</code>" 
+<b>Telefon raqami:</b> <code>{number}</code>
+<b>Parol:</b> <code>{message.text}</code>"""
 
     await bot.send_message(chat_id, text, reply_markup=confirmation(), parse_mode="html")
     await bot.set_state(user_id, auth_sts.confirm, chat_id)
@@ -140,7 +140,6 @@ async def _login_password(message: Message):
 
     async with Session() as db:
         user = (await db.execute(user_q)).scalar()
-        session = (await db.execute(select(UserSessions).where(UserSessions.user_id == user.id))).scalar()
         data["user_id"] = user.id
         if user and check_password_hash(user.password, password):
             try:

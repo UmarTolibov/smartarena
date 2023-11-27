@@ -1,49 +1,24 @@
-import json
-
-from sqlalchemy.dialects.sqlite import JSON
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, reconstructor
-from sqlalchemy import ForeignKey, UniqueConstraint
-from sqlalchemy import Enum as SqlEnum
-from datetime import datetime, timedelta
+from pydantic.datetime_parse import timedelta
+from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
+from sqlalchemy import UniqueConstraint, Table, Integer, ForeignKey, DateTime, Enum as SqlEnum, Column
 from typing import List
+import json
+from datetime import datetime, timedelta
 from enum import Enum
-
-with open("bot/users/markups/regions.json", "r", encoding="utf-8") as json_file:
-    data = json.load(json_file)
-
-
-# Create Enum classes dynamically for regions and districts
-class RegionEnum(Enum):
-    pass
-
-
-class DistrictEnum(Enum):
-    pass
-
-
-for region in data.get("regions", []):
-    setattr(RegionEnum, region["name"].replace(" ", "_"), region["name"])
-
-for district in data.get("districts", []):
-    setattr(DistrictEnum, district["name"].replace(" ", "_"), district["name"])
+from sqlalchemy.dialects.sqlite import JSON
 
 
 class Base(DeclarativeBase):
     pass
 
 
-class Subscription(Base):
-    __tablename__ = "subscription"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    start_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.utcnow)
-    end_date: Mapped[datetime] = mapped_column(nullable=False)
-
-    # Define a relationship to the User model
-    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
-    user: Mapped["User"] = relationship("User", back_populates="subscription")
-
-    def __repr__(self):
-        return f"<Subscription {self.user_id} - {self.start_date} to {self.end_date}>"
+stadium_available_hours_association = Table(
+    'stadium_available_hours_association',
+    Base.metadata,
+    Column('stadium_id', Integer, ForeignKey('stadium.id')),
+    Column('available_hour_start', DateTime),
+    Column('available_hour_end', DateTime),
+)
 
 
 class User(Base):
@@ -60,7 +35,6 @@ class User(Base):
     email_var: Mapped[int] = mapped_column(default=0)
 
     sessions: Mapped[List["UserSessions"]] = relationship(back_populates="user", overlaps="session")
-    subscription: Mapped[List["Subscription"]] = relationship(back_populates="user")
     stadiums: Mapped[List["Stadium"]] = relationship(back_populates="user")
     orders: Mapped[List["Order"]] = relationship(back_populates="user")
 
@@ -78,12 +52,47 @@ class UserSessions(Base):
     __table_args__ = (UniqueConstraint('telegram_id', 'user_id', name='telegram_user_uc'),)
 
 
+class Config(Base):
+    __tablename__ = "config"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    key: Mapped[str] = mapped_column(unique=True)
+    value: Mapped[str] = mapped_column(unique=True)
+
+
+class Table(Base):
+    __tablename__ = "table"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column()
+    email: Mapped[str] = mapped_column()
+    subject: Mapped[str] = mapped_column()
+    message: Mapped[str] = mapped_column()
+
+
+with open("bot/users/markups/regions.json", "r", encoding="utf-8") as json_file:
+    data = json.load(json_file)
+
+
+class RegionEnum(Enum):
+    pass
+
+
+class DistrictEnum(Enum):
+    pass
+
+
+for region in data.get("regions", []):
+    setattr(RegionEnum, region["name"].replace(" ", "_"), region["name"])
+
+for district in data.get("districts", []):
+    setattr(DistrictEnum, district["name"].replace(" ", "_"), district["name"])
+
+
 class Stadium(Base):
     __tablename__ = "stadium"
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(nullable=False)
     description: Mapped[str] = mapped_column()
-    image_url: Mapped[str] = mapped_column()
+    image_urls: Mapped[str] = mapped_column()
     price: Mapped[float] = mapped_column(default=0.0)
     opening_time: Mapped[str] = mapped_column(default="08:00:00")
     closing_time: Mapped[str] = mapped_column(default="00:00:00")
@@ -97,36 +106,41 @@ class Stadium(Base):
     user: Mapped["User"] = relationship(back_populates="stadiums")
     orders: Mapped["Order"] = relationship(back_populates="stadium")
     # etc..
-    available_slots: Mapped[str] = mapped_column(default="[]")
+    available_hours = relationship(
+        "AvailableHour",
+        secondary=stadium_available_hours_association,
+        primaryjoin="Stadium.id == stadium_available_hours_association.c.stadium_id",
+        secondaryjoin=(
+            "and_(stadium_available_hours_association.c.stadium_id == Stadium.id, "
+            "stadium_available_hours_association.c.available_hour_start <= func.now(), "
+            "stadium_available_hours_association.c.available_hour_end >= func.now())"
+        ),
+        back_populates="stadium"
+    )
 
-    @reconstructor
-    def init_on_load(self):
-        self.calculate_available_slots()
+    def set_image_urls(self, image_urls):
+        self.image_urls = json.dumps(image_urls)
 
-    def calculate_available_slots(self):
-        busy_slots = self.calculate_busy_slots()
-        total_slots = self.calculate_total_slots()
-
-        # Convert datetime objects to string format
-        busy_slots_str = [(str(slot[0]), str(slot[1])) for slot in busy_slots]
-        total_slots_str = [(str(slot[0]), str(slot[1])) for slot in total_slots]
-
-        # Calculate available slots by subtracting busy slots from total slots
-        self.available_slots = json.dumps(list(set(total_slots_str) - set(busy_slots_str)))
-
-    def calculate_busy_slots(self):
-        busy_slots = [(order.start_time, order.start_time + timedelta(hours=order.hour)) for order in self.orders]
-        return busy_slots
-
-    def calculate_total_slots(self):
-        opening_time = datetime.strptime(self.opening_time, "%H:%M:%S")
-        closing_time = datetime.strptime(self.closing_time, "%H:%M:%S")
-        total_slots = [(opening_time + timedelta(hours=i), opening_time + timedelta(hours=i + 1)) for i in
-                       range(int((closing_time - opening_time).seconds / 3600))]
-        return total_slots
+    def get_image_urls(self):
+        return json.loads(self.image_urls) if self.image_urls else []
 
     def __repr__(self):
         return f"<Stadium {self.name}>"
+
+
+class AvailableHour(Base):
+    __tablename__ = "available_hour"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    available_hour_start: Mapped[datetime] = mapped_column(nullable=False)
+    available_hour_end: Mapped[datetime] = mapped_column(nullable=False)
+
+    stadium_id: Mapped[int] = mapped_column(ForeignKey(Stadium.id), nullable=False)
+    stadium: Mapped["Stadium"] = relationship(Stadium, back_populates="available_hours")
+
+    def __repr__(self):
+        return f"<AvailableHour {self.available_hour_start} - {self.available_hour_end}>"
+
+        # ... other classes and code ...
 
 
 class Order(Base):
@@ -150,19 +164,3 @@ class Order(Base):
 
     def __repr__(self):
         return f"<Order order{self.id}>"
-
-
-class Config(Base):
-    __tablename__ = "config"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    key: Mapped[str] = mapped_column(unique=True)
-    value: Mapped[str] = mapped_column(unique=True)
-
-
-class Table(Base):
-    __tablename__ = "table"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column()
-    email: Mapped[str] = mapped_column()
-    subject: Mapped[str] = mapped_column()
-    message: Mapped[str] = mapped_column()

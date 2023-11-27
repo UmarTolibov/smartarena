@@ -3,7 +3,7 @@ from fastapi_jwt_auth import AuthJWT
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import exists, select, delete, update, or_, and_
 
-from database import OrderModel, Order, User, Stadium
+from database import OrderModel, User, Stadium, Order
 from utils import get_db
 
 order_router = APIRouter(prefix="/order", tags=['Ordering'])

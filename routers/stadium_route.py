@@ -3,7 +3,8 @@ from fastapi_jwt_auth import AuthJWT
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import select, update, delete, or_, and_
 
-from database import User, Stadium, StadiumModel
+from database import User, StadiumModel
+from database import Stadium
 from utils import get_db
 
 stadium_router = APIRouter(prefix="/stadium", tags=['Stadium'])

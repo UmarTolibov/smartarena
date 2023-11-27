@@ -1,5 +1,6 @@
-from sqlalchemy import select, exists
+from sqlalchemy import select
 from telebot.types import Message, CallbackQuery
+
 from bot.loader import bot, auth_sts, user_sts
 from .markups import accounts_inline
 from .markups.buttons import login_signup, main_menu_markup
@@ -42,4 +43,3 @@ async def choose_account_handler(call: CallbackQuery):
         await bot.delete_message(chat_id, call.message.message_id)
         await bot.send_message(chat_id, f"Tizimga kirildi", reply_markup=main_menu_markup())
         await bot.set_state(user_id, user_sts.main, chat_id)
-

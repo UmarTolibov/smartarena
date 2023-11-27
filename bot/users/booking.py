@@ -1,11 +1,11 @@
 from datetime import datetime
 
-import fastapi.encoders
 from sqlalchemy import select, func
 from sqlalchemy.orm import aliased
 from telebot.types import Message, ReplyKeyboardRemove, CallbackQuery
-from bot.loader import bot, auth_sts, user_sts
-from database import Session, Stadium, Order
+
+from bot.loader import bot
+from database import Stadium, Order, Session
 from .markups.buttons import *
 from .markups.inline_buttons import *
 
@@ -13,7 +13,6 @@ from .markups.inline_buttons import *
 @bot.message_handler(regexp="📆Bron qilish")
 async def book_stadium(message: Message):
     chat_id = message.chat.id
-    user_id = message.from_user.id
     await bot.send_message(chat_id, "Viloyatni tanlang", reply_markup=regions_inline())
 
 

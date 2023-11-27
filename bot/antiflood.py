@@ -6,7 +6,7 @@ class SimpleMiddleware(BaseMiddleware):
     def __init__(self, limit, bot) -> None:
         self.last_time = {}
         self.limit = limit
-        self.update_types = ['message']
+        self.update_types = ['text']
         self.bot = bot
 
     async def pre_process(self, message: Message, data):

@@ -48,6 +48,12 @@ def back():
     return markup
 
 
+def done():
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add(KeyboardButton("Jo'natib bo'ldim👌"))
+    return markup
+
+
 def request_location():
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add(KeyboardButton("Lokatsiyani jo'natish🗺📍", request_location=True))
