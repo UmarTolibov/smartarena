@@ -1,6 +1,3 @@
-import pprint
-
-from telebot.asyncio_handler_backends import ContinueHandling
 from telebot.types import Message, ReplyKeyboardRemove, CallbackQuery
 from bot.loader import bot, stadium_sts, user_sts
 from database import Stadium, Session
@@ -196,6 +193,7 @@ async def stadium_confirmation_handler(callback: CallbackQuery):
             await bot.send_message(chat_id, "Stadion qo'shildi.", reply_markup=main_menu_markup())
             await bot.set_state(user_id, user_sts.main, chat_id)
         except Exception as e:
+            print(e)
             await bot.send_message(chat_id, "Hatolik yuz berdi, qayta urinib ko'ring:(",
                                    reply_markup=your_stadiums_markup())
             await bot.set_state(chat_id, stadium_sts.init, user_id)

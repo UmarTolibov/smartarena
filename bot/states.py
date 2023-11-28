@@ -29,3 +29,7 @@ class StadiumState(StatesGroup):
     district = State()
     location = State()
     confirm = State()
+
+
+class ManageStadiums(StatesGroup):
+    choose_stadium = State()

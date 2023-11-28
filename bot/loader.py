@@ -3,7 +3,7 @@ from telebot.asyncio_storage import StateMemoryStorage
 from telebot import asyncio_filters
 from telebot.types import Update, BotCommand
 
-from .states import Auth, UserState, StadiumState
+from .states import Auth, UserState, StadiumState, ManageStadiums
 from .antiflood import SimpleMiddleware
 from utils import TOKEN
 
@@ -14,6 +14,7 @@ bot.setup_middleware(SimpleMiddleware(2, bot))
 auth_sts = Auth()
 user_sts = UserState()
 stadium_sts = StadiumState()
+manage_sts = ManageStadiums()
 
 
 async def bot_meta():
