@@ -3,20 +3,22 @@ from telebot.types import Message
 
 
 class SimpleMiddleware(BaseMiddleware):
-    def __init__(self, limit, bot) -> None:
+    def __init__(self, limit, bot):
+        super().__init__()
         self.last_time = {}
         self.limit = limit
-        self.update_types = ['text']
+        self.update_types = ['message']
         self.bot = bot
 
     async def pre_process(self, message: Message, data):
         chat_id = message.chat.id
         user_id = message.from_user.id
-        if not message.from_user.id in self.last_time:
+        message_id = message.message_id
+        if not (message.from_user.id in self.last_time):
             self.last_time[message.from_user.id] = message.date
             return
         if message.date - self.last_time[message.from_user.id] < self.limit:
-            await self.bot.delete_message(message.chat.id, message.message_id)
+            await self.bot.delete_message(chat_id, message_id)
             return CancelUpdate()
         self.last_time[message.from_user.id] = message.date
 

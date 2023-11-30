@@ -151,7 +151,7 @@ class AvailableHour(Base):
 class Order(Base):
     __tablename__ = "order"
     id: Mapped[int] = mapped_column(primary_key=True)
-    status: Mapped[int] = mapped_column()
+    status: Mapped[str] = mapped_column()
     start_time: Mapped[datetime] = mapped_column()
     hour: Mapped[int] = mapped_column(default=1)
 

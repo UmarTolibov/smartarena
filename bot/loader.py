@@ -7,7 +7,7 @@ from .states import Auth, UserState, StadiumState, ManageStadiums
 from .antiflood import SimpleMiddleware
 from utils import TOKEN
 
-bot = AsyncTeleBot(TOKEN, state_storage=StateMemoryStorage())
+bot = AsyncTeleBot(TOKEN, state_storage=StateMemoryStorage(), colorful_logs=True)
 bot.add_custom_filter(asyncio_filters.StateFilter(bot))
 bot.add_custom_filter(asyncio_filters.ChatFilter())
 bot.setup_middleware(SimpleMiddleware(2, bot))

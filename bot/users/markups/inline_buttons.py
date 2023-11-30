@@ -1,12 +1,35 @@
+import datetime
 import json
 
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-
 
 def confirmation():
     markup = InlineKeyboardMarkup(row_width=2)
     markup.add(InlineKeyboardButton("Tasdiqlash✅", callback_data="confirm"))
     markup.add(InlineKeyboardButton("O\'zgartirish✏️", callback_data="reject"))
+    return markup
+
+
+def date_time():
+    markup = InlineKeyboardMarkup()
+    today = datetime.datetime.today().date()
+
+    # Calculate the end date (20 days from today)
+    end_date = today + datetime.timedelta(days=20)
+
+    # Generate a list of dates from today to the end date
+    date_range = [today + datetime.timedelta(days=x) for x in range((end_date - today).days + 1)]
+    row_buttons = []
+    for date in date_range:
+        row_buttons.append(
+            InlineKeyboardButton(date.strftime("%d-%b"), callback_data=f"date|{date.strftime('%Y:%m:%d')}"))
+
+        if len(row_buttons) == 3:
+            markup.row(*row_buttons)
+            row_buttons = []
+
+    if row_buttons:  # Add the remaining buttons if any
+        markup.row(*row_buttons)
     return markup
 
 
@@ -93,12 +116,23 @@ def stadiums_inline(stadiums):
     markup = InlineKeyboardMarkup(row_width=1)
     for stadium in stadiums:
         button_text = stadium.name
-        callback_data = f"stadium|{stadium.id}"
+        callback_data = f"book|{stadium.id}"
 
         button = InlineKeyboardButton(button_text, callback_data=callback_data)
         markup.add(button)
 
     return markup
+
+
+def book_inline(bron=False):
+    markup = InlineKeyboardMarkup()
+    if bron:
+        markup.row(InlineKeyboardButton("Bron qilish☑️", callback_data="book_now"))
+        return markup
+    else:
+        markup.row(InlineKeyboardButton("Bron qilish☑️", callback_data="book_now"),
+                   InlineKeyboardButton("Lakatsiyani ko'rish📍", callback_data="send_location"))
+        return markup
 
 
 def accounts_inline(accounts):

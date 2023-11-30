@@ -12,13 +12,12 @@ Session = async_sessionmaker(engine)
 
 
 @event.listens_for(Order, "after_insert")
-async def create_available_hours_for_order(mapper, target):
+async def create_available_hours_for_order(mapper, session, target):
     if target.start_time is not None and target.hour is not None:
-        async with Session() as session:
-            available_hour = AvailableHour(
-                available_hour_start=target.start_time,
-                available_hour_end=target.end_time,
-                stadium=target.stadium
-            )
-            session.add(available_hour)
-            await session.commit()
+        available_hour = AvailableHour(
+            available_hour_start=target.start_time,
+            available_hour_end=target.end_time,
+            stadium=target.stadium
+        )
+        session.add(available_hour)
+        await session.commit()
