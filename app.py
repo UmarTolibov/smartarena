@@ -8,7 +8,7 @@ from telebot.types import Update
 # from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import Order, Base
+from database import Order, Base, populate_enums, RegionEnum, DistrictEnum
 from utils import description, MeasureResponseTimeMiddleware, get_db
 from routers import *
 from utils import WEBHOOK_URL, TOKEN
@@ -29,11 +29,17 @@ async def main():
 
 @app.on_event("startup")
 async def on_startup():
+    populate_enums()
     webhook_info = await bot.get_webhook_info()
     if webhook_info.url != WEBHOOK_URL:
         await bot.set_webhook(url=WEBHOOK_URL)
         await bot_meta()
 
+
+@app.get("/test_enums")
+async def test_enums():
+    return {"RegionEnum values": [region.value for region in RegionEnum],
+            "DistrictEnum values": [district.value for district in DistrictEnum]}
 
 @app.post(f"/webhook/{TOKEN}/", include_in_schema=False)
 async def handle_telegram_message(update: dict):

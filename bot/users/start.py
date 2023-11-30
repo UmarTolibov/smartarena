@@ -23,7 +23,7 @@ async def greeting(message: Message):
                 await bot.set_state(user_id, chat_id)
             else:
                 async with bot.retrieve_data(user_id, chat_id) as data:
-                    data["user_id"] = user_check.first().id
+                    data["user_id"] = user_check[0][1]
                 await bot.send_message(chat_id, f"Salom {user_check[0].username}", reply_markup=main_menu_markup())
                 await bot.set_state(user_id, user_sts.main, chat_id)
     except Exception as e:

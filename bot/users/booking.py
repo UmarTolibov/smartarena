@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, exists, and_
 from sqlalchemy.orm import aliased
 from telebot.types import Message, ReplyKeyboardRemove, CallbackQuery
 
@@ -75,13 +75,18 @@ async def hour_choose(call: CallbackQuery):
         order_alias = aliased(Order)
         query = (
             select(Stadium)
-            .join(order_alias, Stadium.id == order_alias.stadium_id)
             .filter(func.lower(Stadium.region).ilike(func.lower(region_filter)))
             .filter(func.lower(Stadium.district).ilike(func.lower(district_filter)))
-            .filter(order_alias.start_time == start_time_filter)
-            .filter(order_alias.hour == hour_filter)
+            .filter(~exists().where(
+                and_(
+                    order_alias.stadium_id == Stadium.id,
+                    order_alias.start_time == start_time_filter,
+                    order_alias.hour == hour_filter
+                )
+            ))
         )
 
+        # Execute the query asynchronously to get the result
         result = await session.execute(query)
         stadiums = result.scalars().all()
         await bot.send_message(chat_id, "Stadionlar", reply_markup=main_menu_markup())

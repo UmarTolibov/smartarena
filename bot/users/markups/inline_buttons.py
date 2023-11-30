@@ -91,7 +91,6 @@ def hours_inline():
 
 def stadiums_inline(stadiums):
     markup = InlineKeyboardMarkup(row_width=1)
-
     for stadium in stadiums:
         button_text = stadium.name
         callback_data = f"stadium|{stadium.id}"
@@ -117,4 +116,33 @@ def yes_no_inline():
     markup = InlineKeyboardMarkup()
     markup.row(InlineKeyboardButton("Ha✅", callback_data="proceed|1"),
                InlineKeyboardButton("Yo'q❌", callback_data="proceed|0"))
+    return markup
+
+
+def stadiums_choose(stadiums):
+    markup = InlineKeyboardMarkup(row_width=2)
+    row_buttons = []
+    for stadium in stadiums:
+        markup.add(InlineKeyboardButton(stadium[0], callback_data=f"stadium|{stadium[1]}"))
+    return markup
+
+
+def manage_stadium():
+    markup = InlineKeyboardMarkup()
+    name = InlineKeyboardButton("Nom✏️", callback_data="manage|name")
+    desc = InlineKeyboardButton("Ma'lumot✏️", callback_data="manage|description")
+    image = InlineKeyboardButton("Rasmlar✏️", callback_data="manage|image")
+    price = InlineKeyboardButton("Narx✏️", callback_data="manage|price")
+    opening = InlineKeyboardButton("Ochilish vaqti✏️", callback_data="manage|opening_time")
+    closing = InlineKeyboardButton("Yopilish vaqti✏️", callback_data="manage|closing_time")
+    region = InlineKeyboardButton("Viloyat✏️", callback_data="manage|region")
+    district = InlineKeyboardButton("Tuman✏️", callback_data="manage|district")
+    location = InlineKeyboardButton("Lokatsiya✏️", callback_data="manage|location")
+    delete = InlineKeyboardButton("Stadionni o'chirish❌", callback_data="manage|delete")
+    markup.row(name, desc)
+    markup.row(image, price)
+    markup.row(opening, closing)
+    markup.row(region, district)
+    markup.row(location)
+    markup.row(delete)
     return markup

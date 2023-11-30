@@ -4,7 +4,7 @@ from sqlalchemy import UniqueConstraint, Table, Integer, ForeignKey, DateTime, E
 from typing import List
 import json
 from datetime import datetime, timedelta
-from enum import Enum
+from enum import Enum, auto
 from sqlalchemy.dialects.sqlite import JSON
 
 
@@ -68,23 +68,28 @@ class Table(Base):
     message: Mapped[str] = mapped_column()
 
 
-with open("bot/users/markups/regions.json", "r", encoding="utf-8") as json_file:
-    data = json.load(json_file)
-
-
 class RegionEnum(Enum):
-    pass
+    name = "value"
 
 
 class DistrictEnum(Enum):
-    pass
+    name = "value"
 
 
-for region in data.get("regions", []):
-    setattr(RegionEnum, region["name"].replace(" ", "_"), region["name"])
+def create_enum_class(name, data):
+    processed_data = [{"name": ''.join(e for e in item["name"] if e.isalnum()).lower()} for item in data]
+    enum_class = Enum(name, [(item["name"].replace(" ", "_"), item["name"]) for item in processed_data])
+    return enum_class
 
-for district in data.get("districts", []):
-    setattr(DistrictEnum, district["name"].replace(" ", "_"), district["name"])
+
+def populate_enums():
+    with open("C:\\Users\\User\Documents\GitHub\smartarena\\bot\\users\\markups\\regions.json", "r",
+              encoding="utf-8") as json_file:
+        data = json.load(json_file)
+
+    # Populate RegionEnum
+    RegionEnum = create_enum_class("RegionEnum", data["regions"])
+    DistrictEnum = create_enum_class("DistrictEnum", data["districts"])
 
 
 class Stadium(Base):
@@ -97,8 +102,8 @@ class Stadium(Base):
     opening_time: Mapped[str] = mapped_column(default="08:00:00")
     closing_time: Mapped[str] = mapped_column(default="00:00:00")
     is_active: Mapped[bool] = mapped_column(default=False)
-    region: Mapped[str] = mapped_column(SqlEnum(RegionEnum))
-    district: Mapped[str] = mapped_column(SqlEnum(DistrictEnum))
+    region: Mapped[str] = mapped_column()
+    district: Mapped[str] = mapped_column()
     location: Mapped[dict] = mapped_column(JSON, default={"longitude": 0, "latitude": 0})
     number_of_orders: Mapped[int] = mapped_column(default=0)
     # relationships
