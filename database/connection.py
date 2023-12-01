@@ -1,3 +1,5 @@
+import asyncio
+
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.pool import AsyncAdaptedQueuePool
 from sqlalchemy import event
@@ -12,12 +14,19 @@ Session = async_sessionmaker(engine)
 
 
 @event.listens_for(Order, "after_insert")
-async def create_available_hours_for_order(mapper, session, target):
+def create_available_hours_for_order(mapper, session, target):
     if target.start_time is not None and target.hour is not None:
         available_hour = AvailableHour(
             available_hour_start=target.start_time,
             available_hour_end=target.end_time,
             stadium=target.stadium
         )
-        session.add(available_hour)
-        await session.commit()
+        try:
+            print(target)
+            session.execute(available_hour.__table__.insert().values({
+                "available_hour_start": target.start_time,
+                "available_hour_end": target.end_time,
+                "stadium_id": target.stadium_id
+            }))
+        except Exception as e:
+            print(e)

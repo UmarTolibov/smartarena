@@ -1,3 +1,5 @@
+import asyncio
+
 from sqlalchemy import select
 from telebot.types import Message, CallbackQuery
 
