@@ -3,6 +3,7 @@ import json
 
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
+
 def confirmation():
     markup = InlineKeyboardMarkup(row_width=2)
     markup.add(InlineKeyboardButton("Tasdiqlash✅", callback_data="confirm"))
@@ -161,22 +162,23 @@ def stadiums_choose(stadiums):
     return markup
 
 
-def manage_stadium():
+def manage_stadium(s_id):
     markup = InlineKeyboardMarkup()
-    name = InlineKeyboardButton("Nom✏️", callback_data="manage|name")
-    desc = InlineKeyboardButton("Ma'lumot✏️", callback_data="manage|description")
-    image = InlineKeyboardButton("Rasmlar✏️", callback_data="manage|image")
-    price = InlineKeyboardButton("Narx✏️", callback_data="manage|price")
-    opening = InlineKeyboardButton("Ochilish vaqti✏️", callback_data="manage|opening_time")
-    closing = InlineKeyboardButton("Yopilish vaqti✏️", callback_data="manage|closing_time")
-    region = InlineKeyboardButton("Viloyat✏️", callback_data="manage|region")
-    district = InlineKeyboardButton("Tuman✏️", callback_data="manage|district")
-    location = InlineKeyboardButton("Lokatsiya✏️", callback_data="manage|location")
-    delete = InlineKeyboardButton("Stadionni o'chirish❌", callback_data="manage|delete")
+    name = InlineKeyboardButton("Nom✏️", callback_data=f"manage|name|{s_id}")
+    desc = InlineKeyboardButton("Ma'lumot✏️", callback_data=f"manage|desc|{s_id}")
+    image = InlineKeyboardButton("Rasmlar✏️", callback_data=f"manage|image_urls|{s_id}")
+    price = InlineKeyboardButton("Narx✏️", callback_data=f"manage|price|{s_id}")
+    opening = InlineKeyboardButton("Ochilish vaqti✏️", callback_data=f"manage|otime|{s_id}")
+    closing = InlineKeyboardButton("Yopilish vaqti✏️", callback_data=f"manage|ctime|{s_id}")
+    region = InlineKeyboardButton("Viloyat✏️", callback_data=f"manage|region|{s_id}")
+    district = InlineKeyboardButton("Tuman✏️", callback_data=f"manage|disc|{s_id}")
+    location = InlineKeyboardButton("Lokatsiya✏️", callback_data=f"manage|location|{s_id}")
+    refresh = InlineKeyboardButton("Yangilash🔄", callback_data=f"manage|refresh|{s_id}")
+    delete = InlineKeyboardButton("Stadionni o'chirish❌", callback_data=f"manage|delete|{s_id}")
     markup.row(name, desc)
     markup.row(image, price)
     markup.row(opening, closing)
     markup.row(region, district)
     markup.row(location)
-    markup.row(delete)
+    markup.row(refresh, delete)
     return markup

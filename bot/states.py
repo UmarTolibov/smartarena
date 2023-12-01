@@ -33,3 +33,13 @@ class StadiumState(StatesGroup):
 
 class ManageStadiums(StatesGroup):
     choose_stadium = State()
+    edit = State()
+    name = State()
+    description = State()
+    image = State()
+    price = State()
+    open_time = State()
+    close_time = State()
+    region = State()
+    district = State()
+    location = State()

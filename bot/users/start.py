@@ -1,5 +1,3 @@
-import asyncio
-
 from sqlalchemy import select
 from telebot.types import Message, CallbackQuery
 
@@ -22,7 +20,7 @@ async def greeting(message: Message):
             if len(user_check) >= 2:
                 markup = accounts_inline(user_check)
                 await bot.send_message(chat_id, "Qaysi akkaunt bilan davom ettirmoqchisiz?", reply_markup=markup)
-                await bot.set_state(user_id, chat_id)
+                await bot.set_state(user_id, auth_sts.account, chat_id)
             else:
                 async with bot.retrieve_data(user_id, chat_id) as data:
                     data["user_id"] = user_check[0][1]
@@ -35,7 +33,7 @@ async def greeting(message: Message):
         await bot.set_state(user_id, auth_sts.init, chat_id)
 
 
-@bot.callback_query_handler(func=lambda call: "account" in call.data.split("|"))
+@bot.callback_query_handler(func=lambda call: "account" in call.data.split("|"), state=auth_sts.account)
 async def choose_account_handler(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
