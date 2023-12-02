@@ -129,12 +129,9 @@ async def stadium_preview(call: CallbackQuery):
         image_urls = json.loads(stadium.image_urls)
         images = []
         for i in image_urls:
-            if image_urls.index(i) != -1:
-                images.append(InputMediaPhoto(i, caption=message, parse_mode="html"))
-            else:
-                images.append(InputMediaPhoto(i))
+            images.append(InputMediaPhoto(i))
         await bot.send_media_group(chat_id, images)
-        await bot.send_message(chat_id, "-------------------", reply_markup=book_inline())
+        await bot.send_message(chat_id, message, parse_mode="html", reply_markup=book_inline())
         await bot.answer_callback_query(call.id, f"stadion {stadium.name}")
 
 

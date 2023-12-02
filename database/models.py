@@ -83,8 +83,16 @@ def create_enum_class(name, data):
 
 
 def populate_enums():
+    import os
+
+    # Get the base directory of the script or application
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Construct the full file path
+    file_path = os.path.join(base_dir, 'bot', 'users', 'markups', 'regions.json')
+
     try:
-        with open(f"~\\bot\\users\\markups\\regions.json", "r",
+        with open(file_path, "r",
                   encoding="utf-8") as json_file:
             data = json.load(json_file)
     except Exception as e:
