@@ -89,7 +89,7 @@ def populate_enums():
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
     # Construct the full file path
-    file_path = os.path.join(base_dir, 'bot', 'users', 'markups', 'regions.json')
+    file_path = os.path.join('app', 'bot', 'users', 'markups', 'regions.json')
 
     try:
         with open(file_path, "r",
