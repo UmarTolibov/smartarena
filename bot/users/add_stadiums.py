@@ -124,7 +124,7 @@ async def stadium_region_handler(call: CallbackQuery):
     markup = district_inline(region_id, 1)
     async with bot.retrieve_data(user_id, chat_id) as data:
         data["stadium_region"] = region_id
-        with open("bot/users/markups/regions.json", "r", encoding="utf-8") as file:
+        with open("regions.json", "r", encoding="utf-8") as file:
             region = json.load(file)["regions"][region_id - 1]
         data["region_name"] = region['name']
     await bot.edit_message_text("Tumanni tanlang", chat_id, call.message.message_id, reply_markup=markup)
@@ -139,7 +139,7 @@ async def district_choose(call: CallbackQuery):
     district_id = int(call.data.split("|")[1])
     async with bot.retrieve_data(user_id, chat_id) as data:
         data["stadium_district"] = district_id
-        with open("bot/users/markups/regions.json", "r", encoding="utf-8") as file:
+        with open("regions.json", "r", encoding="utf-8") as file:
             district = json.load(file)["districts"][district_id - 15]
             data["district_name"] = district['name']
     await bot.send_message(chat_id, "Stadion joylashux nuqtasini(lokatsya) jo'nating", reply_markup=request_location())

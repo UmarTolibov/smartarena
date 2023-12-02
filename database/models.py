@@ -97,8 +97,7 @@ def populate_enums():
             data = json.load(json_file)
     except Exception as e:
         print(e)
-        with open(f"C:\\Users\\User\\Documents\\GitHub\\smartarena\\bot\\users\\markups\\regions.json", "r",
-                  encoding="utf-8") as json_file:
+        with open(f"regions.json", "r", encoding="utf-8") as json_file:
             data = json.load(json_file)
     # Populate RegionEnum
     RegionEnum = create_enum_class("RegionEnum", data["regions"])
