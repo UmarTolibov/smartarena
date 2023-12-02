@@ -11,6 +11,7 @@ from .markups.inline_buttons import *
 @bot.message_handler(regexp="📆Bron qilish")
 async def book_stadium(message: Message):
     chat_id = message.chat.id
+    await bot.send_message(chat_id, "Bron qilish", reply_markup=back())
     await bot.send_message(chat_id, "Viloyatni tanlang", reply_markup=regions_inline())
 
 

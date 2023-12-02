@@ -43,3 +43,19 @@ class ManageStadiums(StatesGroup):
     region = State()
     district = State()
     location = State()
+
+
+class MyBookings(StatesGroup):
+    init = State()
+
+
+class Settings(StatesGroup):
+    init = State()
+    username = State()
+    old_password = State()
+    new_password = State()
+    number = State()
+
+
+class Help(StatesGroup):
+    init = State()

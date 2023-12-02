@@ -24,13 +24,14 @@ def main_menu_markup():
 def view_bookings_markup():
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     markup.row(KeyboardButton("🔜 Kelayotgan buyurtmalar"), KeyboardButton("📆 Buyurtmalar tarixi"))
+    markup.row(KeyboardButton("🔙Bosh sahifa"))
     return markup
 
 
 def account_settings_markup():
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     markup.row(KeyboardButton("✏️Username"), KeyboardButton("✏️Password"))
-    markup.row(KeyboardButton("✏️Telefon raqam"))
+    markup.row(KeyboardButton("🔙Bosh sahifa"))
     return markup
 
 
