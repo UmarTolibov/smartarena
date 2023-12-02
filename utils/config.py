@@ -1,14 +1,14 @@
 import json
 import os
+from base_dir import BASE_DIR
 
 server_url = "https://smartarena-bbff190dd374.herokuapp.com"
 ngorok_url = "https://7aab-84-54-80-168.ngrok.io"
 TOKEN = "6262727985:AAE3r4pe-71tWcIEUNOTVenxbz49_rOBoxU"
 WEBHOOK_PATH = f"/webhook/{TOKEN}/"
 SLI_TOKEN = "gnTHhoTY_GAgN29Beg49BRNybun9uwSqu9HFdYRF6"
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_URL = ngorok_url if BASE_DIR.replace("\\",
-                                          "/") == "C:/Users/User/Documents/GitHub/smartarena/utils" else server_url
+                                          "/") == "C:/Users/User/Documents/GitHub/smartarena" else server_url
 WEBHOOK_URL = BASE_URL + WEBHOOK_PATH
 
 description = """

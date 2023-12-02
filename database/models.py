@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 from enum import Enum, auto
 from sqlalchemy.dialects.sqlite import JSON
 
+from base_dir import BASE_DIR
+
 
 class Base(DeclarativeBase):
     pass
@@ -83,7 +85,7 @@ def create_enum_class(name, data):
 
 
 def populate_enums():
-    with open("C:\\Users\\User\Documents\GitHub\smartarena\\bot\\users\\markups\\regions.json", "r",
+    with open(f"{BASE_DIR}\\bot\\users\\markups\\regions.json", "r",
               encoding="utf-8") as json_file:
         data = json.load(json_file)
 
