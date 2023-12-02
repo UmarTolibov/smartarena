@@ -103,3 +103,36 @@ class ChangePassword(BaseModel):
 
 class Email(BaseModel):
     email: str
+
+
+class UpdateStadiumModel(BaseModel):
+    name: Optional[str] | None
+    description: Optional[str] | None
+    image_urls: Optional[ProductImageSchema] | None = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f" \
+                                                     "/Example_image.svg/600px-Example_image.svg.png"
+    price: Optional[float] | None
+    opening_time: Optional[str] | None
+    closing_time: Optional[str] | None
+    is_active: Optional[bool] | None
+    region: Optional[str] | None
+    district: Optional[str] | None
+    location: Optional[dict] | None
+
+    class Config:
+        orm_mode = True
+        schema_extra = {
+            'example': {
+                "name": "name",
+                "description": "description",
+                "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Example_image.svg/600px"
+                         "-Example_image.svg.png",
+                "price": 100.23,
+                "opening_time": "00:00:00",
+                "closing_time": "00:00:00",
+                "is_active": True,
+                "region": "Tashkent",
+                "district": "Yakka Saroy",
+                "location": {"longitude": 22, "latitude": 23}
+
+            }
+        }

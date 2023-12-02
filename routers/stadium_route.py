@@ -1,9 +1,11 @@
+import json
+
 from fastapi import APIRouter, Depends, status, encoders, exceptions, Response
 from fastapi_jwt_auth import AuthJWT
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import select, update, delete, or_, and_
 
-from database import User, StadiumModel
+from database import User, StadiumModel, UpdateStadiumModel
 from database import Stadium
 from utils import get_db
 
@@ -40,8 +42,9 @@ async def add_stadium(stadium: StadiumModel, authorize: AuthJWT = Depends(), db:
     owner = (await db.execute(user_query)).scalar()
     if owner.is_active:
         owner_id = owner.id
+        image = json.dumps([stadium.image_url])
         new_stadium = Stadium(
-            name=stadium.name, description=stadium.description, image_url=stadium.image_url, price=stadium.price,
+            name=stadium.name, description=stadium.description, image_urls=image, price=stadium.price,
             opening_time=stadium.opening_time, closing_time=stadium.closing_time, is_active=stadium.is_active,
             region=stadium.region, district=stadium.district, location=stadium.location, user_id=owner_id
         )
@@ -60,7 +63,7 @@ async def add_stadium(stadium: StadiumModel, authorize: AuthJWT = Depends(), db:
 
 
 @stadium_router.put('/edit')
-async def edit_stadium(stadium: StadiumModel, s: int, authorize: AuthJWT = Depends(),
+async def edit_stadium(stadium: UpdateStadiumModel, s: int, authorize: AuthJWT = Depends(),
                        db: AsyncSession = Depends(get_db)):
     """
                 ## Update a stadium info `Owner|admin only`
@@ -96,14 +99,17 @@ async def edit_stadium(stadium: StadiumModel, s: int, authorize: AuthJWT = Depen
         raise exceptions.HTTPException(status_code=401,
                                        detail="This actions are permitted to stadiums' owner only")
     else:
+        image = json.dumps([stadium.image_urls])
+        data = stadium.dict()
+        data["image_urls"] = image
+        delete_data = []
+        for i, j in data.items():
+            if j == "null" or j is None:
+                delete_data.append(i)
+        for i in delete_data:
+            data.pop(i)
         await db.execute(
-            update(Stadium).where(Stadium.id == s).values(name=stadium.name, description=stadium.description,
-                                                          image_url=stadium.image_url, price=stadium.price,
-                                                          opening_time=stadium.opening_time,
-                                                          closing_time=stadium.closing_time,
-                                                          is_active=stadium.is_active,
-                                                          region=stadium.region, district=stadium.district,
-                                                          location=stadium.location))
+            update(Stadium).where(Stadium.id == s).values(**data))
         await db.commit()
         return encoders.jsonable_encoder({"message": "Updated", "stadium": stadium})
 
@@ -160,7 +166,7 @@ async def retrieve_or_get_all_stadium(s_id: int = 0, get_all: bool = False, auth
     user = (await db.execute(user_query)).scalar()
     if user:
         if get_all is True and s_id == 0:
-            query = select(Stadium).where(Stadium.is_active)
+            query = select(Stadium)
             stadiums = (await db.execute(query)).scalars().all()
             return encoders.jsonable_encoder(stadiums)
         elif s_id != 0 and get_all is False:
