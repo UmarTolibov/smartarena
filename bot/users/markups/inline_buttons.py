@@ -36,7 +36,7 @@ def date_time():
 
 def regions_inline(for_add=0):
     markup = InlineKeyboardMarkup(row_width=2)
-    with open("regions.json", "r", encoding="utf-8") as data:
+    with open("~/regions.json", "r", encoding="utf-8") as data:
         regions = json.load(data)["regions"]
     for i in range(0, len(regions), 2):
         row_buttons = []
@@ -57,7 +57,7 @@ def regions_inline(for_add=0):
 def district_inline(region_id, for_add=0):
     markup = InlineKeyboardMarkup(row_width=2)
 
-    with open("regions.json", "r", encoding="utf-8") as data:
+    with open("~/regions.json", "r", encoding="utf-8") as data:
         districts = json.load(data)["districts"]
 
     row_buttons = []

@@ -89,16 +89,9 @@ def populate_enums():
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
     # Construct the full file path
-    file_path = os.path.join('app', 'bot', 'users', 'markups', 'regions.json')
 
-    try:
-        with open(file_path, "r",
-                  encoding="utf-8") as json_file:
-            data = json.load(json_file)
-    except Exception as e:
-        print(e)
-        with open(f"regions.json", "r", encoding="utf-8") as json_file:
-            data = json.load(json_file)
+    with open(f"~/regions.json", "r", encoding="utf-8") as json_file:
+        data = json.load(json_file)
     # Populate RegionEnum
     RegionEnum = create_enum_class("RegionEnum", data["regions"])
     DistrictEnum = create_enum_class("DistrictEnum", data["districts"])
