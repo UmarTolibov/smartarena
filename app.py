@@ -4,6 +4,7 @@ import re
 from fastapi import FastAPI, routing, encoders, exceptions, Form, Depends
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
+from telebot.async_telebot import logger
 from telebot.types import Update
 # from fastapi.staticfiles import StaticFiles
 # from fastapi.middleware.cors import CORSMiddleware
@@ -31,10 +32,13 @@ async def main():
 @app.on_event("startup")
 async def on_startup():
     populate_enums()
-    webhook_info = await bot.get_webhook_info()
+    webhook_info = await bot.get_webhook_info(30)
     if webhook_info.url != WEBHOOK_URL:
-        await bot.set_webhook(url=WEBHOOK_URL)
-    await bot_meta()
+        logger.debug(
+            f"updating webhook url, old: {webhook_info.url}, new: {WEBHOOK_URL}"
+        )
+        if not await bot.set_webhook(url=WEBHOOK_URL):
+            raise RuntimeError("unable to set webhook")
 
 
 @app.post(f"/webhook/{TOKEN}/", include_in_schema=False)
@@ -42,8 +46,8 @@ async def handle_telegram_message(update: dict):
     if update:
         update = Update.de_json(update)
         await bot.process_new_updates([update])
-    else:
-        return
+        await bot_meta()
+
 
 
 @app.exception_handler(exceptions.HTTPException)
