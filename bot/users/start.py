@@ -7,7 +7,7 @@ from .markups.buttons import login_signup, main_menu_markup
 from database import Session, User, UserSessions
 
 
-@bot.message_handler(commands=["start"])
+@bot.message_handler(commands=["start"], is_admin=False)
 async def greeting(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -17,6 +17,7 @@ async def greeting(message: Message):
             user_check_q = select(User.username, User.id).join(UserSessions, User.id == UserSessions.user_id).where(
                 UserSessions.telegram_id == user_id)
             user_check = (await db.execute(user_check_q)).fetchall()
+            print(user_check)
 
         if len(user_check) >= 2:
             markup = accounts_inline(user_check)

@@ -17,6 +17,10 @@ class UserState(StatesGroup):
     region = State()
 
 
+class SuperUserState(StatesGroup):
+    menu = State()
+
+
 class StadiumState(StatesGroup):
     init = State()
     name = State()

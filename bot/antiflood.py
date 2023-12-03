@@ -8,8 +8,8 @@ logger.setLevel(logging.ERROR)
 
 
 class HandleException(ExceptionHandler):
-    async def handle(self, exception):
-        return logging.log(logging.ERROR, exception)
+    def handle(self, exception):
+        logging.log(logging.ERROR, exception)
 
 
 class SimpleMiddleware(BaseMiddleware):

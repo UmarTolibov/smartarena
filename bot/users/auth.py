@@ -126,11 +126,12 @@ async def login_username(message: Message):
             async with bot.retrieve_data(user_id, chat_id) as data:
                 data["username"] = message.text
                 data["attempts"] = 0
+                data["is_admin"] = user.is_staff
             await bot.send_message(chat_id, "Parolni kiriting!")
             await bot.set_state(user_id, auth_sts.login_password, chat_id)
 
 
-@bot.message_handler(content_types=["text"], state=auth_sts.login_password)
+@bot.message_handler(content_types=["text"], state=auth_sts.login_password, is_admin=False)
 async def _login_password(message: Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -148,6 +149,7 @@ async def _login_password(message: Message):
                 await db.commit()
             except IntegrityError as e:
                 print(e)
+
             await bot.send_message(chat_id, "Tizimga kirdingiz!", reply_markup=main_menu_markup())
             await bot.set_state(user_id, user_sts.main, chat_id)
         else:
@@ -164,23 +166,14 @@ async def _login_password(message: Message):
 async def logout_handler(message: Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
-    async with bot.retrieve_data(user_id, chat_id) as data:
-        try:
-            db_user_id = data["user_id"]
-            async with Session.begin() as db:
-                del_query = delete(UserSessions).where(UserSessions.user_id == db_user_id)
-                await db.execute(del_query)
-                await db.commit()
-            await bot.send_message(chat_id, "Tizimdan chiqdingiz", login_signup())
+    try:
+        async with Session.begin() as db:
+            user_q = select(UserSessions.user_id).where(UserSessions.telegram_id == user_id)
+            user = (await db.execute(user_q)).scalar()
+            del_query = delete(UserSessions).where(UserSessions.user_id == user)
+            await db.execute(del_query)
+            await db.commit()
+            await bot.send_message(chat_id, "Tizimdan chiqdingiz", reply_markup=login_signup())
             await bot.set_state(user_id, auth_sts.init, chat_id)
-        except KeyError:
-            async with Session.begin() as db:
-                user_q = select(UserSessions.user_id).where(UserSessions.telegram_id == user_id)
-                user = (await db.execute(user_q)).scalar()
-                del_query = delete(UserSessions).where(UserSessions.user_id == user.id)
-                await db.execute(del_query)
-                await db.commit()
-                await bot.send_message(chat_id, "Tizimdan chiqdingiz", login_signup())
-                await bot.set_state(user_id, auth_sts.init, chat_id)
-        except Exception as e:
-            print(e)
+    except Exception as e:
+        print(e)

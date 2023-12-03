@@ -1,8 +1,12 @@
+import telebot.types
+from sqlalchemy import select
 from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_storage import StateMemoryStorage
 from telebot import asyncio_filters
 from telebot.types import Update, BotCommand
-from .states import Auth, UserState, StadiumState, ManageStadiums, MyBookings, Settings, Help
+
+from database import Session, User, UserSessions
+from .states import Auth, UserState, StadiumState, ManageStadiums, MyBookings, Settings, Help, SuperUserState
 from .antiflood import SimpleMiddleware, HandleException
 from utils import TOKEN
 
@@ -17,6 +21,7 @@ manage_sts = ManageStadiums()
 booking_sts = MyBookings()
 settings_sts = Settings()
 help_sts = Help()
+admin_sts = SuperUserState()
 
 
 async def bot_meta():
@@ -25,6 +30,33 @@ async def bot_meta():
                                         BotCommand("cancel", "Bekor qilish"),
                                         BotCommand("logout", "Tizimdan chiqish")
                                         ])
+
+
+class IsAdmin(asyncio_filters.SimpleCustomFilter):
+    print("asssssss")
+    key = 'is_admin'
+
+    async def check(self, message):
+        user_id = message.from_user.id
+        chat_id = message.chat.id
+        try:
+            async with bot.retrieve_data(user_id, chat_id) as data:
+                is_admin = data["is_admin"]
+        except KeyError as e:
+            is_admin = False
+            print(e)
+        async with Session.begin() as db:
+            admin = (
+                await db.execute(select(User.is_staff).join(UserSessions, User.id == UserSessions.user_id).where(
+                    UserSessions.telegram_id == message.from_user.id))).scalar()
+            print(admin)
+            if admin is None:
+                admin = False
+
+            return admin or is_admin
+
+
+bot.add_custom_filter(IsAdmin())
 
 
 async def response_to_update(update: Update):
