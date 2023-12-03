@@ -37,6 +37,7 @@ async def on_startup():
         logger.debug(
             f"updating webhook url, old: {webhook_info.url}, new: {WEBHOOK_URL}"
         )
+        await bot_meta()
         if not await bot.set_webhook(url=WEBHOOK_URL):
             raise RuntimeError("unable to set webhook")
 
@@ -46,7 +47,6 @@ async def handle_telegram_message(update: dict):
     if update:
         update = Update.de_json(update)
         await bot.process_new_updates([update])
-        await bot_meta()
 
 
 @app.exception_handler(exceptions.HTTPException)
