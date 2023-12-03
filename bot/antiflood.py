@@ -1,4 +1,6 @@
 import logging
+import traceback
+
 from telebot.async_telebot import logger
 from telebot.asyncio_handler_backends import BaseMiddleware, CancelUpdate, ContinueHandling
 from telebot.async_telebot import ExceptionHandler
@@ -8,8 +10,27 @@ logger.setLevel(logging.ERROR)
 
 
 class HandleException(ExceptionHandler):
-    def handle(self, exception):
-        logging.log(logging.ERROR, exception)
+    def __init__(self, log_level=logging.ERROR):
+        self.log_level = log_level
+
+    def handle(self, exception: Exception):
+        # Log the exception with the specified logging level
+        logging.log(self.log_level, f"Exception caught: {exception}", exc_info=True)
+
+        # Print additional details about the exception
+        print(f"Exception Type: {type(exception)}")
+        print(f"Exception Message: {str(exception)}")
+        print(f"Exception Args: {exception.args}")
+
+        # Get the traceback as a string
+        traceback_str = traceback.format_exc()
+
+        # Log or print the traceback
+        logging.log(self.log_level, f"Traceback:\n{traceback_str}")
+        print("Traceback:")
+        print(traceback_str)
+
+        return None
 
 
 class SimpleMiddleware(BaseMiddleware):

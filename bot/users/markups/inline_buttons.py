@@ -176,7 +176,7 @@ def manage_stadium(s_id):
     district = InlineKeyboardButton("Tuman✏️", callback_data=f"manage|disc|{s_id}")
     location = InlineKeyboardButton("Lokatsiya✏️", callback_data=f"manage|location|{s_id}")
     refresh = InlineKeyboardButton("Yangilash🔄", callback_data=f"manage|refresh|{s_id}")
-    delete = InlineKeyboardButton("Stadionni o'chirish❌", callback_data=f"manage|delete|{s_id}")
+    delete = InlineKeyboardButton("Stadionni o'chirish❌", callback_data=f"manage|del|{s_id}")
     markup.row(name, desc)
     markup.row(image, price)
     markup.row(opening, closing)

@@ -29,12 +29,12 @@ async def add_stadium_handler(message: Message):
     await bot.send_message(chat_id, "Davom ettirasizmi?", reply_markup=yes_no_inline())
 
 
-@bot.callback_query_handler(func=lambda call: "proceed" in call.data.split("|"))
+@bot.callback_query_handler(func=lambda call: "proceed" in call.data.split("|"), is_admin=False)
 async def proceed_yes_no(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
-    answer = bool(call.data.split("|")[1])
-    if answer:
+    answer = bool(int(call.data.split("|")[1]))
+    if answer is True:
         await bot.answer_callback_query(call.id, "Malumotlarni kirishda hushyor bo'lishingizni so'rab qolamiz",
                                         show_alert=True)
         await bot.send_message(chat_id, "Stadion nomini kiriting")
@@ -179,12 +179,15 @@ async def stadium_location_handler(message: Message):
     await bot.set_state(user_id, stadium_sts.confirm, chat_id)
 
 
-@bot.callback_query_handler(func=lambda call: True, state=stadium_sts.confirm)
+@bot.callback_query_handler(func=lambda call: call.data in ("confirm", "reject"), state=stadium_sts.confirm,
+                            is_admin=False)
 async def stadium_confirmation_handler(callback: CallbackQuery):
+    print("_")
     chat_id = callback.message.chat.id
     user_id = callback.from_user.id
     if callback.data == "confirm":
         async with bot.retrieve_data(user_id, chat_id) as data:
+            print(data)
             new_stadium = Stadium(name=data["stadium_name"], description=data["stadium_description"],
                                   price=int(data["stadium_price"]), opening_time=data["stadium_open_time"],
                                   closing_time=data["stadium_close_time"], region=data["region_name"],

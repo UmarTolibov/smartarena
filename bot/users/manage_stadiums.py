@@ -48,103 +48,105 @@ async def stadium_to_manage(call: CallbackQuery):
         await bot.answer_callback_query(call.id, "yangilash")
 
 
-@bot.callback_query_handler(func=lambda call: call.data.split("|")[1] == "delete", state=manage_sts.edit)
+@bot.callback_query_handler(func=lambda call: True, state=manage_sts.edit)
 async def delete_stadium(call: CallbackQuery):
-    chat_id = call.message.chat.id
-    user_id = call.from_user.id
-    stadium_id = int(call.data.split("|")[2])
-    async with Session.begin() as db:
-        query = delete(Stadium).where(Stadium.id == stadium_id)
-        await db.execute(query)
-        await db.commit()
-        await bot.answer_callback_query(call.id, "Stadion o'chirildi")
-        await bot.send_message(chat_id, "Bosh menu:", reply_markup=your_stadiums_markup())
-        await bot.delete_message(chat_id, call.message.message_id)
+    if call.data.split("|")[1] == "delete":
+        chat_id = call.message.chat.id
+        user_id = call.from_user.id
+        stadium_id = int(call.data.split("|")[2])
+        async with Session.begin() as db:
+            query = delete(Stadium).where(Stadium.id == stadium_id)
+            await db.execute(query)
+            await db.commit()
+            await bot.answer_callback_query(call.id, "Stadion o'chirildi")
+            await bot.send_message(chat_id, "Bosh menu:", reply_markup=your_stadiums_markup())
+            await bot.delete_message(chat_id, call.message.message_id)
 
 
-@bot.callback_query_handler(func=lambda call: call.data.split("|")[1] == "refresh", state=manage_sts.edit)
+@bot.callback_query_handler(func=lambda call: True, state=manage_sts.edit)
 async def refresh_stadium(call: CallbackQuery):
-    chat_id = call.message.chat.id
-    user_id = call.from_user.id
-    stadium_id = int(call.data.split("|")[2])
-    await bot.answer_callback_query(call.id, "Yangilanyapti")
-    async with Session() as db:
-        s_query = select(Stadium).where(Stadium.id == stadium_id)
-        stadium = (await db.execute(s_query)).scalar()
-        images = [InputMediaPhoto(i) for i in json.loads(stadium.image_urls)]
-        markup = manage_stadium(stadium_id)
-        message = f"""
-<b>Nomi:</b> {stadium.name}
-<b>Ma'lumot:</b> {stadium.description}
-<b>Narxi:</b> {stadium.price} so'm/soat
-<b>Ochilish vaqti:</b> {stadium.opening_time}
-<b>Yopilish vaqti:</b> {stadium.closing_time}
-<b>Viloyat:</b> {stadium.region}
-<b>Tuman:</b> <i>{stadium.district}</i>"""
-        async with bot.retrieve_data(user_id, chat_id) as data:
-            await bot.delete_message(chat_id, data["sent_loc"])
-            await bot.delete_message(chat_id, data["sent_message"])
-            for i in data["sent_media"]:
-                await bot.delete_message(chat_id, i)
+    if call.data.split("|")[1] == "refresh":
+        chat_id = call.message.chat.id
+        user_id = call.from_user.id
+        stadium_id = int(call.data.split("|")[2])
+        await bot.answer_callback_query(call.id, "Yangilanyapti")
+        async with Session() as db:
+            s_query = select(Stadium).where(Stadium.id == stadium_id)
+            stadium = (await db.execute(s_query)).scalar()
+            images = [InputMediaPhoto(i) for i in json.loads(stadium.image_urls)]
+            markup = manage_stadium(stadium_id)
+            message = f"""
+    <b>Nomi:</b> {stadium.name}
+    <b>Ma'lumot:</b> {stadium.description}
+    <b>Narxi:</b> {stadium.price} so'm/soat
+    <b>Ochilish vaqti:</b> {stadium.opening_time}
+    <b>Yopilish vaqti:</b> {stadium.closing_time}
+    <b>Viloyat:</b> {stadium.region}
+    <b>Tuman:</b> <i>{stadium.district}</i>"""
+            async with bot.retrieve_data(user_id, chat_id) as data:
+                await bot.delete_message(chat_id, data["sent_loc"])
+                await bot.delete_message(chat_id, data["sent_message"])
+                for i in data["sent_media"]:
+                    await bot.delete_message(chat_id, i)
 
-            sent_loc = await bot.send_location(chat_id, **stadium.location, reply_markup=back())
-            sent_me = await bot.send_media_group(chat_id, images)
-            sent_message = await bot.send_message(chat_id, message, parse_mode="html",
-                                                  reply_markup=markup)
-            data["sent_loc"] = sent_loc.message_id
-            data["sent_media"] = [i.message_id for i in sent_me]
-            data["sent_message"] = sent_message.message_id
+                sent_loc = await bot.send_location(chat_id, **stadium.location, reply_markup=back())
+                sent_me = await bot.send_media_group(chat_id, images)
+                sent_message = await bot.send_message(chat_id, message, parse_mode="html",
+                                                      reply_markup=markup)
+                data["sent_loc"] = sent_loc.message_id
+                data["sent_media"] = [i.message_id for i in sent_me]
+                data["sent_message"] = sent_message.message_id
 
 
-@bot.callback_query_handler(
-    func=lambda call: call.data.split("|")[1] in ["name", "desc", "image_urls", "price", "otime", "ctime", "region",
-                                                  "disc", "location"], state=manage_sts.edit)
+@bot.callback_query_handler(func=lambda call: True, state=manage_sts.edit)
 async def edit_stadium_data(call: CallbackQuery):
-    from utils.config import regions_file_path
-    chat_id = call.message.chat.id
-    user_id = call.from_user.id
-    target = call.data.split("|")[1]
-    stadium_id = int(call.data.split("|")[2])
-    async with Session.begin() as db:
-        stadium_region = (await db.execute(select(Stadium.region).where(Stadium.id == stadium_id))).scalar()
-    with open(regions_file_path, "r", encoding="utf-8") as file:
-        region_id = list(filter(lambda x: x["name"] == stadium_region, json.load(file)["regions"]))[0]["id"]
-        if target == "location":
-            sent = await bot.send_message(chat_id, "Yangi Lokatsiyani jo'nating",
-                                          reply_markup=request_location())
-            await bot.set_state(user_id, manage_sts.location, chat_id)
-        elif target == "image":
-            sent = await bot.send_message(chat_id, "Yangi Rasmlarni jo'nating va tugmani bosing",
-                                          reply_markup=done())
-            await bot.set_state(user_id, manage_sts.image, chat_id)
-        elif target == "region":
-            sent = await bot.send_message(chat_id, "Yangi Viloyatni tanlang", reply_markup=regions_inline(1))
-            await bot.set_state(user_id, manage_sts.region, chat_id)
-        elif target == "disc":
-            sent = await bot.send_message(chat_id, "Yangi Tumanni tanlang",
-                                          reply_markup=district_inline(region_id, for_add=1))
-            await bot.set_state(user_id, manage_sts.district, chat_id)
-        elif target == "otime":
-            sent = await bot.send_message(chat_id, "Ochilish vaqtini o'zgartirish",
-                                          reply_markup=start_time_inline(1))
-            await bot.set_state(user_id, manage_sts.open_time, chat_id)
-        elif target == "ctime":
-            sent = await bot.send_message(chat_id, "Yopilish vaqtini o'zgartirish",
-                                          reply_markup=start_time_inline(2))
-            await bot.set_state(user_id, manage_sts.close_time, chat_id)
-        elif target == "name":
-            sent = await bot.send_message(chat_id, "Stadion uchun yangi nomni jo'nating")
-            await bot.set_state(user_id, manage_sts.name, chat_id)
-        elif target == "price":
-            sent = await bot.send_message(chat_id, "Stadion uchun yangi narxni jo'nating")
-            await bot.set_state(user_id, manage_sts.price, chat_id)
-        else:
-            sent = await bot.send_message(chat_id, "Stadion uchun yangi ma'lumotni jo'nating")
-            await bot.set_state(user_id, manage_sts.description, chat_id)
-        await bot.answer_callback_query(call.id, "yangilash")
-        async with bot.retrieve_data(user_id, chat_id) as data:
-            data["edit_stadium_id"] = stadium_id
-            data["sent_message_id"] = sent.message_id
+    if call.data.split("|")[1] in ["name", "desc", "image_urls", "price", "otime", "ctime", "region",
+                                   "disc", "location"]:
+        from utils.config import regions_file_path
+        chat_id = call.message.chat.id
+        user_id = call.from_user.id
+        target = call.data.split("|")[1]
+        stadium_id = int(call.data.split("|")[2])
+        async with Session.begin() as db:
+            stadium_region = (await db.execute(select(Stadium.region).where(Stadium.id == stadium_id))).scalar()
+        with open(regions_file_path, "r", encoding="utf-8") as file:
+            region_id = list(filter(lambda x: x["name"] == stadium_region, json.load(file)["regions"]))[0]["id"]
+            if target == "location":
+                sent = await bot.send_message(chat_id, "Yangi Lokatsiyani jo'nating",
+                                              reply_markup=request_location())
+                await bot.set_state(user_id, manage_sts.location, chat_id)
+            elif target == "image":
+                sent = await bot.send_message(chat_id, "Yangi Rasmlarni jo'nating va tugmani bosing",
+                                              reply_markup=done())
+                await bot.set_state(user_id, manage_sts.image, chat_id)
+            elif target == "region":
+                sent = await bot.send_message(chat_id, "Yangi Viloyatni tanlang", reply_markup=regions_inline(1))
+                await bot.set_state(user_id, manage_sts.region, chat_id)
+            elif target == "disc":
+                sent = await bot.send_message(chat_id, "Yangi Tumanni tanlang",
+                                              reply_markup=district_inline(region_id, for_add=1))
+                await bot.set_state(user_id, manage_sts.district, chat_id)
+            elif target == "otime":
+                sent = await bot.send_message(chat_id, "Ochilish vaqtini o'zgartirish",
+                                              reply_markup=start_time_inline(1))
+                await bot.set_state(user_id, manage_sts.open_time, chat_id)
+            elif target == "ctime":
+                sent = await bot.send_message(chat_id, "Yopilish vaqtini o'zgartirish",
+                                              reply_markup=start_time_inline(2))
+                await bot.set_state(user_id, manage_sts.close_time, chat_id)
+            elif target == "name":
+                sent = await bot.send_message(chat_id, "Stadion uchun yangi nomni jo'nating")
+                await bot.set_state(user_id, manage_sts.name, chat_id)
+            elif target == "price":
+                sent = await bot.send_message(chat_id, "Stadion uchun yangi narxni jo'nating")
+                await bot.set_state(user_id, manage_sts.price, chat_id)
+            else:
+                sent = await bot.send_message(chat_id, "Stadion uchun yangi ma'lumotni jo'nating")
+                await bot.set_state(user_id, manage_sts.description, chat_id)
+            await bot.answer_callback_query(call.id, "yangilash")
+            async with bot.retrieve_data(user_id, chat_id) as data:
+                data["edit_stadium_id"] = stadium_id
+                data["sent_message_id"] = sent.message_id
 
 
 @bot.message_handler(content_types=["text"], state=manage_sts.name)

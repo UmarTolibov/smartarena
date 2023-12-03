@@ -54,7 +54,7 @@ async def booking_history(message: Message):
         )
     async with Session.begin() as db:
         result = (await db.execute(orders_history_query)).all()
-        text = ""
+        text = "Buyurtmalar tarixi Tarix"
         for i in result:
             time = i[0].strftime("%y-%b %d.%H")
             text += f"""<b>Stadium</b>: {i[2]}

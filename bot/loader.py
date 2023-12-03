@@ -33,27 +33,34 @@ async def bot_meta():
 
 
 class IsAdmin(asyncio_filters.SimpleCustomFilter):
-    print("asssssss")
     key = 'is_admin'
 
     async def check(self, message):
         user_id = message.from_user.id
-        chat_id = message.chat.id
+        chat_id = message.chat.id if type(message) != telebot.types.CallbackQuery else message.message.chat.id
+        print(user_id, chat_id)
         try:
             async with bot.retrieve_data(user_id, chat_id) as data:
-                is_admin = data["is_admin"]
-        except KeyError as e:
-            is_admin = False
-            print(e)
-        async with Session.begin() as db:
-            admin = (
-                await db.execute(select(User.is_staff).join(UserSessions, User.id == UserSessions.user_id).where(
-                    UserSessions.telegram_id == message.from_user.id))).scalar()
-            print(admin)
-            if admin is None:
-                admin = False
+                if data and "is_admin" in data:
+                    return data["is_admin"]
 
-            return admin or is_admin
+        except KeyError as e:
+            print(e)
+        try:
+            async with Session() as db:
+                admin_q = select(User.is_staff).join(UserSessions, User.id == UserSessions.user_id).where(
+                    UserSessions.telegram_id == int(user_id))
+                admin = (await db.execute(admin_q)).scalar()
+                if admin is not None:
+                    if data is not None:
+                        data["is_admin"] = admin
+                    return admin
+        except IndexError as e:
+            print(56, e)
+        except Exception as e:
+            print(61, e)
+        print("filtered")
+        return False
 
 
 bot.add_custom_filter(IsAdmin())

@@ -11,8 +11,10 @@ from .markups.inline_buttons import *
 @bot.message_handler(regexp="📆Bron qilish")
 async def book_stadium(message: Message):
     chat_id = message.chat.id
+    user_id = message.from_user.id
     await bot.send_message(chat_id, "Bron qilish", reply_markup=back())
     await bot.send_message(chat_id, "Viloyatni tanlang", reply_markup=regions_inline())
+    await bot.set_state(user_id, user_sts.region, chat_id)
 
 
 @bot.callback_query_handler(func=lambda call: "region" in call.data.split('|'))
@@ -70,22 +72,23 @@ async def start_time_choose(call: CallbackQuery):
     await bot.edit_message_text("Nechchi soat", chat_id, call.message.message_id, reply_markup=markup)
 
 
-@bot.callback_query_handler(func=lambda call: "hour" in call.data.split('|'))
+@bot.callback_query_handler(func=lambda call: "hour" in call.data.split('|'), is_admin=False)
 async def hour_choose(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
     hour = int(call.data.split("|")[1])
     async with bot.retrieve_data(user_id, chat_id) as data:
+        print(data)
         data["hour"] = hour
         region_filter = data["region_name"]
         district_filter = data["district_name"]
         start_time_str = data["start_time"]
         date_str = data["date"]
-        print(start_time_str, date_str)
         date_object = datetime.datetime.strptime(date_str.replace(":", "-"), "%Y-%m-%d")
         start_time_delta = datetime.datetime.strptime(start_time_str, "%H:%M").time()
         combined_datetime = datetime.datetime.combine(date_object, start_time_delta)
         hour_filter = data["hour"]
+        markup = main_menu_markup()
     await bot.answer_callback_query(call.id, "Stadionlar")
     async with Session() as session:
         order_alias = aliased(Order)
@@ -105,7 +108,7 @@ async def hour_choose(call: CallbackQuery):
         # Execute the query asynchronously to get the result
         result = await session.execute(query)
         stadiums = result.scalars().all()
-        await bot.send_message(chat_id, "Stadionlar", reply_markup=main_menu_markup())
+        await bot.send_message(chat_id, "Stadionlar", reply_markup=markup)
         await bot.send_message(chat_id, "Tanlang", reply_markup=stadiums_inline(stadiums))
 
 
@@ -138,7 +141,7 @@ async def stadium_preview(call: CallbackQuery):
         await bot.answer_callback_query(call.id, f"stadion {stadium.name}")
 
 
-@bot.callback_query_handler(func=lambda call: call.data in ["book_now", "send_location"])
+@bot.callback_query_handler(func=lambda call: call.data in ["book_now", "send_location"], is_admin=False)
 async def location_book(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id

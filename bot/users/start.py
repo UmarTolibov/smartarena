@@ -17,7 +17,6 @@ async def greeting(message: Message):
             user_check_q = select(User.username, User.id).join(UserSessions, User.id == UserSessions.user_id).where(
                 UserSessions.telegram_id == user_id)
             user_check = (await db.execute(user_check_q)).fetchall()
-            print(user_check)
 
         if len(user_check) >= 2:
             markup = accounts_inline(user_check)
@@ -44,3 +43,5 @@ async def choose_account_handler(call: CallbackQuery):
         await bot.delete_message(chat_id, call.message.message_id)
         await bot.send_message(chat_id, f"Tizimga kirildi", reply_markup=main_menu_markup())
         await bot.set_state(user_id, user_sts.main, chat_id)
+
+
