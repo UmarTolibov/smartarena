@@ -48,6 +48,7 @@ async def proceed_yes_no(call: CallbackQuery):
 async def stadium_name_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
+    print("stadium_name working")
     async with bot.retrieve_data(user_id, chat_id) as data:
         data["stadium_name"] = message.text
     await bot.send_message(chat_id, "Stadion haqida ma'lumot jo'nating")
@@ -58,6 +59,7 @@ async def stadium_name_handler(message: Message):
 async def stadium_desc_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
+    print("stadium_desc working")
     async with bot.retrieve_data(user_id, chat_id) as data:
         data["stadium_description"] = message.text
         data["photo"] = 0
@@ -70,6 +72,7 @@ async def stadium_desc_handler(message: Message):
 async def stadium_image_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
+    print("stadium_image working")
 
     if message.content_type == "photo":
         async with bot.retrieve_data(user_id, chat_id) as data:
