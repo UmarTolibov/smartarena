@@ -1,4 +1,5 @@
 import inspect
+import logging
 import re
 from fastapi import FastAPI, routing, encoders, exceptions, Form, Depends
 from fastapi.openapi.utils import get_openapi
@@ -8,7 +9,7 @@ from telebot.types import Update
 # from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import Order, Base, populate_enums, RegionEnum, DistrictEnum
+from database import populate_enums
 from utils import description, MeasureResponseTimeMiddleware, get_db
 from routers import *
 from utils import WEBHOOK_URL, TOKEN
@@ -35,11 +36,6 @@ async def on_startup():
         await bot.set_webhook(url=WEBHOOK_URL)
         await bot_meta()
 
-
-@app.get("/test_enums")
-async def test_enums():
-    return {"RegionEnum values": [region.value for region in RegionEnum],
-            "DistrictEnum values": [district.value for district in DistrictEnum]}
 
 @app.post(f"/webhook/{TOKEN}/", include_in_schema=False)
 async def handle_telegram_message(update: dict):
@@ -78,7 +74,7 @@ async def handle_http_exception(request, exc):
 
 @app.exception_handler(Exception)
 async def handle_exception(request, exc):
-    print("/app line 35", request, exc, sep=" ")
+    logging.log(logging.WARNING, exc.detail)
     return JSONResponse(
         status_code=500,
         content={"message": "Internal Server Error"}
