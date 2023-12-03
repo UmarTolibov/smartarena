@@ -49,7 +49,6 @@ async def handle_telegram_message(update: dict):
         await bot_meta()
 
 
-
 @app.exception_handler(exceptions.HTTPException)
 async def handle_http_exception(request, exc):
     print(request)
@@ -61,7 +60,7 @@ async def handle_http_exception(request, exc):
 
 @app.exception_handler(Exception)
 async def handle_exception(request, exc):
-    logging.log(logging.WARNING, exc.detail)
+    logging.log(logging.WARNING, exc)
     return JSONResponse(
         status_code=500,
         content={"message": "Internal Server Error"}
