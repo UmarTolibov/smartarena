@@ -34,7 +34,7 @@ async def on_startup():
     webhook_info = await bot.get_webhook_info()
     if webhook_info.url != WEBHOOK_URL:
         await bot.set_webhook(url=WEBHOOK_URL)
-        await bot_meta()
+    await bot_meta()
 
 
 @app.post(f"/webhook/{TOKEN}/", include_in_schema=False)
@@ -44,23 +44,6 @@ async def handle_telegram_message(update: dict):
         await bot.process_new_updates([update])
     else:
         return
-
-
-@app.post("/submit_form", include_in_schema=False)
-async def submit_form(name: str = Form(...),
-                      email: str = Form(...),
-                      subject: str = Form(...),
-                      message: str = Form(...),
-                      db: AsyncSession = Depends(get_db)):
-    from database.models import Table
-    table = Table(name=name, email=email, subject=subject, message=message)
-    db.add(table)
-    try:
-        await db.commit()
-        await db.refresh(table)
-        return {"message": "Done"}
-    except Exception as e:
-        raise exceptions.HTTPException(401, detail=f"bad request\n{e}")
 
 
 @app.exception_handler(exceptions.HTTPException)
