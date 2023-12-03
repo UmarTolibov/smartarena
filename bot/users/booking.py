@@ -17,13 +17,15 @@ async def book_stadium(message: Message):
 
 @bot.callback_query_handler(func=lambda call: "region" in call.data.split('|'))
 async def region_choose(call: CallbackQuery):
+    from utils.config import regions_file_path
+
     chat_id = call.message.chat.id
     user_id = call.from_user.id
     region_id = int(call.data.split("|")[1])
     markup = district_inline(region_id)
     async with bot.retrieve_data(user_id, chat_id) as data:
         data["region"] = region_id
-        with open("~/regions.json", "r", encoding="utf-8") as file:
+        with open(regions_file_path, "r", encoding="utf-8") as file:
             region = json.load(file)["regions"][region_id - 1]
         data["region_name"] = region['name']
     sent = await bot.send_message(chat_id, f"{region['name']}", reply_markup=ReplyKeyboardRemove())
@@ -33,13 +35,14 @@ async def region_choose(call: CallbackQuery):
 
 @bot.callback_query_handler(func=lambda call: "district" in call.data.split('|'))
 async def district_choose(call: CallbackQuery):
+    from utils.config import regions_file_path
     chat_id = call.message.chat.id
     user_id = call.from_user.id
     district_id = int(call.data.split("|")[1])
     markup = date_time()
     async with bot.retrieve_data(user_id, chat_id) as data:
         data["district"] = district_id
-        with open("~/regions.json", "r", encoding="utf-8") as file:
+        with open(regions_file_path, "r", encoding="utf-8") as file:
             district = json.load(file)["districts"][district_id - 15]
             data["district_name"] = district['name']
     await bot.edit_message_text("Sanani Tanlang", chat_id, call.message.message_id, reply_markup=markup)

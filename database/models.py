@@ -83,14 +83,12 @@ def create_enum_class(name, data):
 
 
 def populate_enums():
-    import os
-
+    from utils.config import regions_file_path
     # Get the base directory of the script or application
-    base_dir = os.path.dirname(os.path.abspath(__file__))
 
     # Construct the full file path
 
-    with open(f"~/regions.json", "r", encoding="utf-8") as json_file:
+    with open(regions_file_path, "r", encoding="utf-8") as json_file:
         data = json.load(json_file)
     # Populate RegionEnum
     RegionEnum = create_enum_class("RegionEnum", data["regions"])

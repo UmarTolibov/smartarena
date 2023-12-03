@@ -67,6 +67,7 @@ async def refresh_stadium(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
     stadium_id = int(call.data.split("|")[2])
+    await bot.answer_callback_query(call.id, "Yangilanyapti")
     async with Session() as db:
         s_query = select(Stadium).where(Stadium.id == stadium_id)
         stadium = (await db.execute(s_query)).scalar()
@@ -82,13 +83,14 @@ async def refresh_stadium(call: CallbackQuery):
 <b>Tuman:</b> <i>{stadium.district}</i>"""
         async with bot.retrieve_data(user_id, chat_id) as data:
             await bot.delete_message(chat_id, data["sent_loc"])
+            await bot.delete_message(chat_id, data["sent_message"])
             for i in data["sent_media"]:
                 await bot.delete_message(chat_id, i)
 
             sent_loc = await bot.send_location(chat_id, **stadium.location, reply_markup=back())
             sent_me = await bot.send_media_group(chat_id, images)
-            sent_message = await bot.edit_message_text(message, chat_id, data["sent_message"], parse_mode="html",
-                                                       reply_markup=markup)
+            sent_message = await bot.send_message(chat_id, message, parse_mode="html",
+                                                  reply_markup=markup)
             data["sent_loc"] = sent_loc.message_id
             data["sent_media"] = [i.message_id for i in sent_me]
             data["sent_message"] = sent_message.message_id
@@ -98,13 +100,14 @@ async def refresh_stadium(call: CallbackQuery):
     func=lambda call: call.data.split("|")[1] in ["name", "desc", "image_urls", "price", "otime", "ctime", "region",
                                                   "disc", "location"], state=manage_sts.edit)
 async def edit_stadium_data(call: CallbackQuery):
+    from utils.config import regions_file_path
     chat_id = call.message.chat.id
     user_id = call.from_user.id
     target = call.data.split("|")[1]
     stadium_id = int(call.data.split("|")[2])
     async with Session.begin() as db:
         stadium_region = (await db.execute(select(Stadium.region).where(Stadium.id == stadium_id))).scalar()
-    with open("~/regions.json", "r", encoding="utf-8") as file:
+    with open(regions_file_path, "r", encoding="utf-8") as file:
         region_id = list(filter(lambda x: x["name"] == stadium_region, json.load(file)["regions"]))[0]["id"]
         if target == "location":
             sent = await bot.send_message(chat_id, "Yangi Lokatsiyani jo'nating",
@@ -279,6 +282,7 @@ async def stadium_edit_close_time_handler(call: CallbackQuery):
 @bot.callback_query_handler(func=lambda call: "add_region" in call.data.split('|'),
                             state=manage_sts.region)
 async def stadium_edit_region_handler(call: CallbackQuery):
+    from utils.config import regions_file_path
     chat_id = call.message.chat.id
     user_id = call.from_user.id
     region_id = int(call.data.split("|")[1])
@@ -286,7 +290,7 @@ async def stadium_edit_region_handler(call: CallbackQuery):
     async with bot.retrieve_data(user_id, chat_id) as data:
         await bot.delete_message(chat_id, data["sent_message_id"])
         stadium_id = data["edit_stadium_id"]
-        with open("~/regions.json", "r", encoding="utf-8") as file:
+        with open(regions_file_path, "r", encoding="utf-8") as file:
             region = json.load(file)["regions"][region_id - 1]["name"]
 
     async with Session.begin() as db:
@@ -302,13 +306,14 @@ async def stadium_edit_region_handler(call: CallbackQuery):
 @bot.callback_query_handler(func=lambda call: "add_district" in call.data.split('|'),
                             state=manage_sts.district)
 async def edit_district_choose(call: CallbackQuery):
+    from utils.config import regions_file_path
     chat_id = call.message.chat.id
     user_id = call.from_user.id
     district_id = int(call.data.split("|")[1])
     async with bot.retrieve_data(user_id, chat_id) as data:
         await bot.delete_message(chat_id, data["sent_message_id"])
         stadium_id = data["edit_stadium_id"]
-        with open("~/regions.json", "r", encoding="utf-8") as file:
+        with open(regions_file_path, "r", encoding="utf-8") as file:
             district = json.load(file)["districts"][district_id - 15]["name"]
     async with Session.begin() as db:
         print(district)
