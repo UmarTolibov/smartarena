@@ -171,6 +171,8 @@ async def logout_handler(message: Message):
                 del_query = delete(UserSessions).where(UserSessions.user_id == db_user_id)
                 await db.execute(del_query)
                 await db.commit()
+            await bot.send_message(chat_id, "Tizimdan chiqdingiz", login_signup())
+            await bot.set_state(user_id, auth_sts.init, chat_id)
         except KeyError:
             async with Session.begin() as db:
                 user_q = select(UserSessions.user_id).where(UserSessions.telegram_id == user_id)
@@ -178,5 +180,7 @@ async def logout_handler(message: Message):
                 del_query = delete(UserSessions).where(UserSessions.user_id == user.id)
                 await db.execute(del_query)
                 await db.commit()
+                await bot.send_message(chat_id, "Tizimdan chiqdingiz", login_signup())
+                await bot.set_state(user_id, auth_sts.init, chat_id)
         except Exception as e:
             print(e)

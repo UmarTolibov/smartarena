@@ -2,15 +2,14 @@ from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_storage import StateMemoryStorage
 from telebot import asyncio_filters
 from telebot.types import Update, BotCommand
-
 from .states import Auth, UserState, StadiumState, ManageStadiums, MyBookings, Settings, Help
-from .antiflood import SimpleMiddleware
+from .antiflood import SimpleMiddleware, HandleException
 from utils import TOKEN
 
-bot = AsyncTeleBot(TOKEN, state_storage=StateMemoryStorage(), colorful_logs=True)
+bot = AsyncTeleBot(TOKEN, state_storage=StateMemoryStorage(), colorful_logs=True, exception_handler=HandleException())
 bot.add_custom_filter(asyncio_filters.StateFilter(bot))
 bot.add_custom_filter(asyncio_filters.ChatFilter())
-bot.setup_middleware(SimpleMiddleware(2, bot))
+bot.setup_middleware(SimpleMiddleware(1, bot))
 auth_sts = Auth()
 user_sts = UserState()
 stadium_sts = StadiumState()
@@ -23,7 +22,8 @@ help_sts = Help()
 async def bot_meta():
     await bot.delete_my_commands()
     await bot.set_my_commands(commands=[BotCommand("start", "Botni boshlash"),
-                                        BotCommand("cancel", "Bekor qilish")
+                                        BotCommand("cancel", "Bekor qilish"),
+                                        BotCommand("logout", "Tizimdan chiqish")
                                         ])
 
 

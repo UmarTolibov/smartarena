@@ -1,5 +1,15 @@
-from telebot.asyncio_handler_backends import BaseMiddleware, CancelUpdate
+import logging
+from telebot.async_telebot import logger
+from telebot.asyncio_handler_backends import BaseMiddleware, CancelUpdate, ContinueHandling
+from telebot.async_telebot import ExceptionHandler
 from telebot.types import Message
+
+logger.setLevel(logging.ERROR)
+
+
+class HandleException(ExceptionHandler):
+    async def handle(self, exception):
+        return logging.log(logging.ERROR, exception)
 
 
 class SimpleMiddleware(BaseMiddleware):
@@ -14,6 +24,8 @@ class SimpleMiddleware(BaseMiddleware):
         chat_id = message.chat.id
         user_id = message.from_user.id
         message_id = message.message_id
+        if message.content_type == "photo":
+            return ContinueHandling()
         if not (message.from_user.id in self.last_time):
             self.last_time[message.from_user.id] = message.date
             return
