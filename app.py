@@ -1,3 +1,4 @@
+import asyncio
 import inspect
 import logging
 import re
@@ -45,10 +46,9 @@ async def on_startup():
 @app.post(f"/webhook/{TOKEN}/", include_in_schema=False)
 async def handle_telegram_message(update: dict):
     if update:
-        print("before update")
         update = Update.de_json(update)
         await bot.process_new_updates([update])
-        print("after update")
+        await asyncio.sleep(0.1)
 
 
 @app.exception_handler(exceptions.HTTPException)
