@@ -48,7 +48,6 @@ async def handle_telegram_message(update: dict):
     if update:
         update = Update.de_json(update)
         await bot.process_new_updates([update])
-        await asyncio.sleep(0.1)
 
 
 @app.exception_handler(exceptions.HTTPException)
