@@ -7,7 +7,6 @@ from .markups.buttons import login_signup, main_menu_markup
 from database import Session, User, UserSessions
 
 
-@bot.message_handler(commands=["start"], is_admin=False)
 async def greeting(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -33,7 +32,6 @@ async def greeting(message: Message):
         await bot.set_state(user_id, auth_sts.init, chat_id)
 
 
-@bot.callback_query_handler(func=lambda call: "account" in call.data.split("|"), state=auth_sts.account)
 async def choose_account_handler(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id

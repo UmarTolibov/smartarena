@@ -8,7 +8,6 @@ from .markups.buttons import *
 from .markups.inline_buttons import *
 
 
-@bot.message_handler(regexp="📆Bron qilish")
 async def book_stadium(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -17,7 +16,6 @@ async def book_stadium(message: Message):
     await bot.set_state(user_id, user_sts.region, chat_id)
 
 
-@bot.callback_query_handler(func=lambda call: "region" in call.data.split('|'))
 async def region_choose(call: CallbackQuery):
     from utils.config import regions_file_path
 
@@ -35,7 +33,6 @@ async def region_choose(call: CallbackQuery):
     await bot.edit_message_text("Tumanni tanlang", chat_id, call.message.message_id, reply_markup=markup)
 
 
-@bot.callback_query_handler(func=lambda call: "district" in call.data.split('|'))
 async def district_choose(call: CallbackQuery):
     from utils.config import regions_file_path
     chat_id = call.message.chat.id
@@ -50,7 +47,6 @@ async def district_choose(call: CallbackQuery):
     await bot.edit_message_text("Sanani Tanlang", chat_id, call.message.message_id, reply_markup=markup)
 
 
-@bot.callback_query_handler(func=lambda call: "date" in call.data.split("|"))
 async def date_choose(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -61,7 +57,6 @@ async def date_choose(call: CallbackQuery):
     await bot.edit_message_text("Boshlash vaqti", chat_id, call.message.message_id, reply_markup=markup)
 
 
-@bot.callback_query_handler(func=lambda call: "start_time" in call.data.split('|'))
 async def start_time_choose(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -72,7 +67,6 @@ async def start_time_choose(call: CallbackQuery):
     await bot.edit_message_text("Nechchi soat", chat_id, call.message.message_id, reply_markup=markup)
 
 
-@bot.callback_query_handler(func=lambda call: "hour" in call.data.split('|'), is_admin=False)
 async def hour_choose(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -112,7 +106,6 @@ async def hour_choose(call: CallbackQuery):
         await bot.send_message(chat_id, "Tanlang", reply_markup=stadiums_inline(stadiums))
 
 
-@bot.callback_query_handler(func=lambda call: "book" in call.data.split("|"))
 async def stadium_preview(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -141,7 +134,6 @@ async def stadium_preview(call: CallbackQuery):
         await bot.answer_callback_query(call.id, f"stadion {stadium.name}")
 
 
-@bot.callback_query_handler(func=lambda call: call.data in ["book_now", "send_location"], is_admin=False)
 async def location_book(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id

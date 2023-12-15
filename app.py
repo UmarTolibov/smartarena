@@ -1,27 +1,24 @@
-import asyncio
 import inspect
 import logging
 import re
-from fastapi import FastAPI, routing, encoders, exceptions, Form, Depends
+from fastapi import FastAPI, routing, encoders, exceptions
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
+
 from telebot.async_telebot import logger
 from telebot.types import Update
-# from fastapi.staticfiles import StaticFiles
-# from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import populate_enums
-from utils import description, MeasureResponseTimeMiddleware, get_db
+from utils import description, MeasureResponseTimeMiddleware
 from routers import *
 from utils import WEBHOOK_URL, TOKEN
-from bot import bot, bot_meta
+from bot import bot, bot_meta, user_register_handlers, superuser_register_handlers
 
-# app.mount('/static', StaticFiles(directory=BASE_DIR + '/statics/'), name='static')
 app = FastAPI()
 app.include_router(auth_router)
 app.include_router(order_router)
 app.include_router(stadium_router)
+
 app.middleware("http")(MeasureResponseTimeMiddleware(app))
 
 
@@ -41,6 +38,8 @@ async def on_startup():
         await bot_meta()
         if not await bot.set_webhook(url=WEBHOOK_URL):
             raise RuntimeError("unable to set webhook")
+    await superuser_register_handlers()
+    await user_register_handlers()
 
 
 @app.post(f"/webhook/{TOKEN}/", include_in_schema=False)
@@ -62,6 +61,7 @@ async def handle_http_exception(request, exc):
 @app.exception_handler(Exception)
 async def handle_exception(request, exc):
     logging.log(logging.WARNING, exc)
+    print(request)
     return JSONResponse(
         status_code=500,
         content={"message": "Internal Server Error"}
@@ -131,3 +131,9 @@ app.openapi = custom_openapi
 #     allow_methods=["*"],
 #     allow_headers=["*"],
 # )
+
+
+# from fastapi.staticfiles import StaticFiles
+# from fastapi.middleware.cors import CORSMiddleware
+# from sqlalchemy.ext.asyncio import AsyncSession
+# import asyncio

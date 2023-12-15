@@ -9,7 +9,6 @@ from .markups.buttons import *
 from database.connection import Session
 
 
-@bot.message_handler(regexp="Ro'yxatdan o'tish🗒", state=auth_sts.init)
 async def signup_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -18,7 +17,6 @@ async def signup_handler(message: Message):
     await bot.set_state(user_id, auth_sts.name, chat_id)
 
 
-@bot.message_handler(content_types=["text"], state=auth_sts.name)
 async def name_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -29,7 +27,6 @@ async def name_handler(message: Message):
     await bot.set_state(user_id, auth_sts.number, chat_id)
 
 
-@bot.message_handler(content_types=["text", "contact"], state=auth_sts.number)
 async def number_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -41,7 +38,6 @@ async def number_handler(message: Message):
     await bot.set_state(user_id, auth_sts.password, chat_id)
 
 
-@bot.message_handler(content_types=["text"], state=auth_sts.password)
 async def password_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -58,7 +54,6 @@ async def password_handler(message: Message):
     await bot.set_state(user_id, auth_sts.confirm, chat_id)
 
 
-@bot.callback_query_handler(func=lambda x: True, state=auth_sts.confirm)
 async def confirmation_inline(callback: CallbackQuery):
     chat_id = callback.message.chat.id
     user_id = callback.from_user.id
@@ -103,7 +98,6 @@ async def confirmation_inline(callback: CallbackQuery):
         await bot.set_state(user_id, auth_sts.name, chat_id)
 
 
-@bot.message_handler(regexp="Kirish↙️", state=auth_sts.init)
 async def login_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -112,7 +106,6 @@ async def login_handler(message: Message):
     await bot.set_state(user_id, auth_sts.username, chat_id)
 
 
-@bot.message_handler(content_types=["text"], state=auth_sts.username)
 async def login_username(message: Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -131,7 +124,6 @@ async def login_username(message: Message):
             await bot.set_state(user_id, auth_sts.login_password, chat_id)
 
 
-@bot.message_handler(content_types=["text"], state=auth_sts.login_password, is_admin=False)
 async def _login_password(message: Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -162,7 +154,6 @@ async def _login_password(message: Message):
                     data["attempts"] = 0
 
 
-@bot.message_handler(commands=["logout"], state='*')
 async def logout_handler(message: Message):
     user_id = message.from_user.id
     chat_id = message.chat.id

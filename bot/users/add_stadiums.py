@@ -5,7 +5,6 @@ from .markups.buttons import *
 from .markups.inline_buttons import *
 
 
-@bot.message_handler(regexp="🏟️Stadionlarim")
 async def my_stadium_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -13,7 +12,6 @@ async def my_stadium_handler(message: Message):
     await bot.set_state(user_id, stadium_sts.init, chat_id)
 
 
-@bot.message_handler(regexp="🌐Stadion qo'shish", state=stadium_sts.init)
 async def add_stadium_handler(message: Message):
     chat_id = message.chat.id
     await bot.send_message(chat_id, """<b>Stadion yaratish uchun quydagi malumotlar kerak boladi</b>
@@ -29,7 +27,6 @@ async def add_stadium_handler(message: Message):
     await bot.send_message(chat_id, "Davom ettirasizmi?", reply_markup=yes_no_inline())
 
 
-@bot.callback_query_handler(func=lambda call: "proceed" in call.data.split("|"), is_admin=False)
 async def proceed_yes_no(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -44,7 +41,6 @@ async def proceed_yes_no(call: CallbackQuery):
         await bot.send_message(chat_id, "Bosh sahifa", reply_markup=main_menu_markup())
 
 
-@bot.message_handler(content_types=["text"], state=stadium_sts.name)
 async def stadium_name_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -55,7 +51,6 @@ async def stadium_name_handler(message: Message):
     await bot.set_state(user_id, stadium_sts.description, chat_id)
 
 
-@bot.message_handler(content_types=["text"], state=stadium_sts.description)
 async def stadium_desc_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -68,7 +63,6 @@ async def stadium_desc_handler(message: Message):
     await bot.set_state(user_id, stadium_sts.image, chat_id)
 
 
-@bot.message_handler(content_types=["photo", "text"], state=stadium_sts.image)
 async def stadium_image_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -82,7 +76,6 @@ async def stadium_image_handler(message: Message):
         await bot.set_state(user_id, stadium_sts.price, chat_id)
 
 
-@bot.message_handler(content_types=["text"], state=stadium_sts.price)
 async def stadium_price_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -92,8 +85,6 @@ async def stadium_price_handler(message: Message):
     await bot.set_state(user_id, stadium_sts.open_time, chat_id)
 
 
-@bot.callback_query_handler(func=lambda call: "s_time" in call.data.split("|"),
-                            state=stadium_sts.open_time)
 async def stadium_open_time_handler(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -105,8 +96,6 @@ async def stadium_open_time_handler(call: CallbackQuery):
         await bot.set_state(user_id, stadium_sts.close_time, chat_id)
 
 
-@bot.callback_query_handler(func=lambda call: "c_time" in call.data.split("|"),
-                            state=stadium_sts.close_time)
 async def stadium_close_time_handler(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -118,8 +107,7 @@ async def stadium_close_time_handler(call: CallbackQuery):
         await bot.set_state(user_id, stadium_sts.region, chat_id)
 
 
-@bot.callback_query_handler(func=lambda call: "add_region" in call.data.split('|'),
-                            state=stadium_sts.region)
+
 async def stadium_region_handler(call: CallbackQuery):
     from utils.config import regions_file_path
     chat_id = call.message.chat.id
@@ -135,8 +123,6 @@ async def stadium_region_handler(call: CallbackQuery):
     await bot.set_state(user_id, stadium_sts.district, chat_id)
 
 
-@bot.callback_query_handler(func=lambda call: "add_district" in call.data.split('|'),
-                            state=stadium_sts.district)
 async def district_choose(call: CallbackQuery):
     from utils.config import regions_file_path
 
@@ -152,7 +138,6 @@ async def district_choose(call: CallbackQuery):
     await bot.set_state(user_id, stadium_sts.location, chat_id)
 
 
-@bot.message_handler(content_types=["location"], state=stadium_sts.location)
 async def stadium_location_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -179,8 +164,6 @@ async def stadium_location_handler(message: Message):
     await bot.set_state(user_id, stadium_sts.confirm, chat_id)
 
 
-@bot.callback_query_handler(func=lambda call: call.data in ("confirm", "reject"), state=stadium_sts.confirm,
-                            is_admin=False)
 async def stadium_confirmation_handler(callback: CallbackQuery):
     print("_")
     chat_id = callback.message.chat.id

@@ -10,7 +10,6 @@ from database import Stadium, Order, Session, User
 from .markups.buttons import *
 
 
-@bot.message_handler(regexp="👨‍💻Admin", is_admin=True)
 async def admin_menu_(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -22,7 +21,6 @@ async def admin_menu_(message: Message):
         return ContinueHandling()
 
 
-@bot.message_handler(regexp="Foydalanuvchilar👥")
 async def admin_menu_users(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -41,7 +39,6 @@ async def admin_menu_users(message: Message):
         return ContinueHandling()
 
 
-@bot.message_handler(regexp="Stadionlar🏟")
 async def admin_menu_stadiums(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -61,7 +58,6 @@ async def admin_menu_stadiums(message: Message):
         return ContinueHandling()
 
 
-@bot.message_handler(regexp="Buyurtmalar🗒")
 async def admin_menu_orders(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id

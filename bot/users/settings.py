@@ -7,7 +7,6 @@ from database import  Session, User
 from .markups.buttons import *
 
 
-@bot.message_handler(regexp="⚙️Sozlanmalar")
 async def settings_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -15,7 +14,6 @@ async def settings_handler(message: Message):
     await bot.set_state(user_id, settings_sts.init, chat_id)
 
 
-@bot.message_handler(regexp="✏️Username", state=settings_sts.init)
 async def settings_username(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -23,7 +21,6 @@ async def settings_username(message: Message):
     await bot.set_state(user_id, settings_sts.username, chat_id)
 
 
-@bot.message_handler(content_types=["text"], state=settings_sts.username)
 async def settings_set_username(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -44,7 +41,6 @@ async def settings_set_username(message: Message):
         await bot.set_state(user_id, auth_sts.init, chat_id)
 
 
-@bot.message_handler(regexp="✏️Password", state=settings_sts.init)
 async def settings_password(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -52,7 +48,6 @@ async def settings_password(message: Message):
     await bot.set_state(user_id, settings_sts.old_password, chat_id)
 
 
-@bot.message_handler(content_types=["text"], state=settings_sts.old_password)
 async def settings_old_password(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -69,7 +64,6 @@ async def settings_old_password(message: Message):
             await bot.send_message(chat_id, "Parol noto'gri qaytadan urinib ko'ring")
 
 
-@bot.message_handler(content_types=["text"], state=settings_sts.new_password)
 async def settings_new_password(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
