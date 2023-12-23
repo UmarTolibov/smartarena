@@ -1,7 +1,7 @@
 import os
 
 server_url = "https://smartarena-bbff190dd374.herokuapp.com"
-ngorok_url = "https://a98b-213-230-114-79.ngrok.io"
+ngorok_url = "https://6bfb-213-230-76-123.ngrok-free.app"
 TOKEN = "6262727985:AAE3r4pe-71tWcIEUNOTVenxbz49_rOBoxU"
 WEBHOOK_PATH = f"/webhook/{TOKEN}/"
 SLI_TOKEN = "gnTHhoTY_GAgN29Beg49BRNybun9uwSqu9HFdYRF6"

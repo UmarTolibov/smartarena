@@ -48,7 +48,6 @@ async def choose_account_handler(call: CallbackQuery):
 
 
 async def admin_login_password(message: Message):
-    print("working")
     user_id = message.from_user.id
     chat_id = message.chat.id
     password = message.text
@@ -67,6 +66,7 @@ async def admin_login_password(message: Message):
                 print(e)
 
             await bot.send_message(chat_id, "Tizimga kirdingiz!", reply_markup=main_menu_markup())
+            await bot.set_state(user_id, admin_sts.menu, chat_id)
         else:
             await bot.send_message(chat_id, "Parol noto\'g\'ri!")
             async with bot.retrieve_data(user_id, chat_id) as data:
