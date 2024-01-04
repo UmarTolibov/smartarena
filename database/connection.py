@@ -22,7 +22,6 @@ def create_available_hours_for_order(mapper, session, target):
             stadium=target.stadium
         )
         try:
-            print(target)
             session.execute(available_hour.__table__.insert().values({
                 "available_hour_start": target.start_time,
                 "available_hour_end": target.end_time,

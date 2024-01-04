@@ -6,6 +6,7 @@ from .markups.buttons import *
 from .markups.inline_buttons import *
 
 
+# regexp="📅 Buyurtmalarni Ko'rish"
 async def my_booking_stadium(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -13,6 +14,7 @@ async def my_booking_stadium(message: Message):
     await bot.set_state(user_id, booking_sts.init, chat_id)
 
 
+# regexp="🔜 Kelayotgan buyurtmalar", state=booking_sts.init
 async def upcoming_bookings(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -27,6 +29,7 @@ async def upcoming_bookings(message: Message):
     async with Session.begin() as db:
         result = (await db.execute(upcoming_orders_query)).all()
         text = ""
+
         for i in result:
             time = i[0].strftime("%y-%b %d.%H")
             text += f"""<b>Stadium</b>: {i[2]}
@@ -34,10 +37,15 @@ async def upcoming_bookings(message: Message):
 <b>Soat</b>: <code>{i[1]}</code>
 
 """
+
+    if text == "":
+        await bot.send_message(chat_id, "Buyurtmalar yo'q")
+    else:
         await bot.send_message(chat_id, text, parse_mode="html", reply_markup=view_bookings_markup())
-        await bot.set_state(user_id, booking_sts.init, chat_id)
+    await bot.set_state(user_id, booking_sts.init, chat_id)
 
 
+# regexp="📆 Buyurtmalar tarixi", state=booking_sts.init
 async def booking_history(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -59,5 +67,9 @@ async def booking_history(message: Message):
 <b>Soat</b>: <code>{i[1]}</code>
 
 """
-    await bot.send_message(chat_id, text, parse_mode="html", reply_markup=view_bookings_markup())
+    if text == "":
+        await bot.send_message(chat_id, "Buyurtmalar yo'q")
+    else:
+        await bot.send_message(chat_id, text, parse_mode="html", reply_markup=view_bookings_markup())
+
     await bot.set_state(user_id, booking_sts.init, chat_id)

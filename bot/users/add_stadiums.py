@@ -5,6 +5,7 @@ from .markups.buttons import *
 from .markups.inline_buttons import *
 
 
+#  regexp="🏟️Stadionlarim"
 async def my_stadium_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -12,21 +13,23 @@ async def my_stadium_handler(message: Message):
     await bot.set_state(user_id, stadium_sts.init, chat_id)
 
 
+# regexp="🌐Stadion qo'shish"
 async def add_stadium_handler(message: Message):
     chat_id = message.chat.id
     await bot.send_message(chat_id, """<b>Stadion yaratish uchun quydagi malumotlar kerak boladi</b>
-<i>Stadion Nomi__________</i>
-<i>Stadion Haqida________</i>
-<i>Stadion Rasmlar_______</i>
-<i>Narxi (soatiga)_______</i>
-<i>Ochilish vaqti________</i>
-<i>Yopilish vaqti________</i>
-<i>Viloyat_______________</i>
-<i>Tuman_________________</i>
-<i>Lakatsiya_____________</i>""", reply_markup=back(), parse_mode="html")
+<i>-Stadion Nomi</i>
+<i>-Kantakt malumotlari</i>
+<i>-Stadion Rasmlar</i>
+<i>-Narxi (soatiga)</i>
+<i>-Ochilish vaqti</i>
+<i>-Yopilish vaqti</i>
+<i>-Viloyat</i>
+<i>-Tuman</i>
+<i>-Lakatsiya</i>""", reply_markup=back(), parse_mode="html")
     await bot.send_message(chat_id, "Davom ettirasizmi?", reply_markup=yes_no_inline())
 
 
+# func=lambda call: "proceed" in call.data.split("|"),is_admin=False
 async def proceed_yes_no(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -41,20 +44,20 @@ async def proceed_yes_no(call: CallbackQuery):
         await bot.send_message(chat_id, "Bosh sahifa", reply_markup=main_menu_markup())
 
 
+# content_types=["text"],state=stadium_sts.name
 async def stadium_name_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
-    print("stadium_name working")
     async with bot.retrieve_data(user_id, chat_id) as data:
         data["stadium_name"] = message.text
-    await bot.send_message(chat_id, "Stadion haqida ma'lumot jo'nating")
+    await bot.send_message(chat_id, "Stadion kontakt/malumotlarinini jo'nating")
     await bot.set_state(user_id, stadium_sts.description, chat_id)
 
 
+# content_types=["text"],state=stadium_sts.description
 async def stadium_desc_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
-    print("stadium_desc working")
     async with bot.retrieve_data(user_id, chat_id) as data:
         data["stadium_description"] = message.text
         data["photo"] = 0
@@ -63,10 +66,10 @@ async def stadium_desc_handler(message: Message):
     await bot.set_state(user_id, stadium_sts.image, chat_id)
 
 
+# content_types=["photo", "text"],state=stadium_sts.image
 async def stadium_image_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
-    print("stadium_image working")
 
     if message.content_type == "photo":
         async with bot.retrieve_data(user_id, chat_id) as data:
@@ -76,6 +79,7 @@ async def stadium_image_handler(message: Message):
         await bot.set_state(user_id, stadium_sts.price, chat_id)
 
 
+# content_types=["text"],state=stadium_sts.price
 async def stadium_price_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -85,6 +89,7 @@ async def stadium_price_handler(message: Message):
     await bot.set_state(user_id, stadium_sts.open_time, chat_id)
 
 
+# func=lambda call: "s_time" in call.data.split("|"),state=stadium_sts.open_time
 async def stadium_open_time_handler(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -96,6 +101,7 @@ async def stadium_open_time_handler(call: CallbackQuery):
         await bot.set_state(user_id, stadium_sts.close_time, chat_id)
 
 
+# func=lambda call: "c_time" in call.data.split("|"),state=stadium_sts.close_time
 async def stadium_close_time_handler(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -107,7 +113,7 @@ async def stadium_close_time_handler(call: CallbackQuery):
         await bot.set_state(user_id, stadium_sts.region, chat_id)
 
 
-
+# func=lambda call: "add_region" in call.data.split('|'),state=stadium_sts.region
 async def stadium_region_handler(call: CallbackQuery):
     from utils.config import regions_file_path
     chat_id = call.message.chat.id
@@ -123,6 +129,7 @@ async def stadium_region_handler(call: CallbackQuery):
     await bot.set_state(user_id, stadium_sts.district, chat_id)
 
 
+# func=lambda call: "add_district" in call.data.split('|'),state=stadium_sts.district
 async def district_choose(call: CallbackQuery):
     from utils.config import regions_file_path
 
@@ -138,6 +145,7 @@ async def district_choose(call: CallbackQuery):
     await bot.set_state(user_id, stadium_sts.location, chat_id)
 
 
+# content_types=["location"],state=stadium_sts.location
 async def stadium_location_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -164,13 +172,12 @@ async def stadium_location_handler(message: Message):
     await bot.set_state(user_id, stadium_sts.confirm, chat_id)
 
 
+# func=lambda call: call.data in ("confirm", "reject"), state=stadium_sts.confirm,is_admin=False
 async def stadium_confirmation_handler(callback: CallbackQuery):
-    print("_")
     chat_id = callback.message.chat.id
     user_id = callback.from_user.id
     if callback.data == "confirm":
         async with bot.retrieve_data(user_id, chat_id) as data:
-            print(data)
             new_stadium = Stadium(name=data["stadium_name"], description=data["stadium_description"],
                                   price=int(data["stadium_price"]), opening_time=data["stadium_open_time"],
                                   closing_time=data["stadium_close_time"], region=data["region_name"],

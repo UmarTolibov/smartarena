@@ -6,6 +6,7 @@ from .markups.buttons import *
 from .markups.inline_buttons import *
 
 
+#  regexp="🔙Bosh sahifa", state="*", is_admin=False
 async def back_to_main(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -13,6 +14,7 @@ async def back_to_main(message: Message):
     await bot.set_state(user_id, user_sts.main, chat_id)
 
 
+# regexp="🔙Orqaga", state="*", is_admin=False
 async def back(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id

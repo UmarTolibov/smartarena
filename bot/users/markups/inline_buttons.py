@@ -172,7 +172,7 @@ def manage_stadium(s_id):
     price = InlineKeyboardButton("Narx✏️", callback_data=f"manage|price|{s_id}")
     opening = InlineKeyboardButton("Ochilish vaqti✏️", callback_data=f"manage|otime|{s_id}")
     closing = InlineKeyboardButton("Yopilish vaqti✏️", callback_data=f"manage|ctime|{s_id}")
-    region = InlineKeyboardButton("Viloyat✏️", callback_data=f"manage|region|{s_id}")
+    region = InlineKeyboardButton("Viloyat✏️", callback_data=f"manage|reg|{s_id}")
     district = InlineKeyboardButton("Tuman✏️", callback_data=f"manage|disc|{s_id}")
     location = InlineKeyboardButton("Lokatsiya✏️", callback_data=f"manage|location|{s_id}")
     refresh = InlineKeyboardButton("Yangilash🔄", callback_data=f"manage|refresh|{s_id}")

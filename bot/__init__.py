@@ -82,7 +82,10 @@ async def user_register_handlers():
                                         state=manage_sts.edit)
     bot.register_callback_query_handler(users.manage_stadiums.refresh_stadium, func=lambda call: True,
                                         state=manage_sts.edit)
-    bot.register_callback_query_handler(users.manage_stadiums.edit_stadium_data, func=lambda call: True,
+    bot.register_callback_query_handler(users.manage_stadiums.edit_stadium_data,
+                                        func=lambda call: call.data.split("|")[1] in ["name", "desc", "image_urls",
+                                                                                      "price", "otime", "ctime", "reg",
+                                                                                      "disc", "location"],
                                         state=manage_sts.edit)
 
     bot.register_message_handler(users.manage_stadiums.stadium_edit_name_handler, content_types=["text"],
@@ -131,6 +134,7 @@ async def user_register_handlers():
 
 
 async def superuser_register_handlers():
+    # admin menu
     bot.register_message_handler(superusers.admin_menu.admin_menu_, regexp="👨‍💻Admin", is_admin=True)
     bot.register_message_handler(superusers.admin_menu.admin_menu_users, regexp="Foydalanuvchilar👥")
     bot.register_message_handler(superusers.admin_menu.admin_menu_stadiums, regexp="Stadionlar🏟")

@@ -3,11 +3,12 @@ from sqlalchemy.orm import aliased
 from telebot.types import Message, ReplyKeyboardRemove, CallbackQuery, InputMediaPhoto
 
 from bot.loader import bot, user_sts
-from database import Stadium, Order, Session
+from database import Stadium, Order, Session, User
 from .markups.buttons import *
 from .markups.inline_buttons import *
 
 
+# , regexp="📆Bron qilish"
 async def book_stadium(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -16,6 +17,7 @@ async def book_stadium(message: Message):
     await bot.set_state(user_id, user_sts.region, chat_id)
 
 
+# func=lambda call: "region" in call.data.split('|')
 async def region_choose(call: CallbackQuery):
     from utils.config import regions_file_path
 
@@ -28,11 +30,12 @@ async def region_choose(call: CallbackQuery):
         with open(regions_file_path, "r", encoding="utf-8") as file:
             region = json.load(file)["regions"][region_id - 1]
         data["region_name"] = region['name']
-    sent = await bot.send_message(chat_id, f"{region['name']}", reply_markup=ReplyKeyboardRemove())
+    sent = await bot.send_message(chat_id, f"{region['name']}")
     await bot.delete_message(chat_id, sent.message_id)
     await bot.edit_message_text("Tumanni tanlang", chat_id, call.message.message_id, reply_markup=markup)
 
 
+# func=lambda call: "district" in call.data.split('|')
 async def district_choose(call: CallbackQuery):
     from utils.config import regions_file_path
     chat_id = call.message.chat.id
@@ -47,6 +50,7 @@ async def district_choose(call: CallbackQuery):
     await bot.edit_message_text("Sanani Tanlang", chat_id, call.message.message_id, reply_markup=markup)
 
 
+# func=lambda call: "date" in call.data.split("|")
 async def date_choose(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -57,6 +61,7 @@ async def date_choose(call: CallbackQuery):
     await bot.edit_message_text("Boshlash vaqti", chat_id, call.message.message_id, reply_markup=markup)
 
 
+# func=lambda call: "start_time" in call.data.split('|')
 async def start_time_choose(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -67,12 +72,12 @@ async def start_time_choose(call: CallbackQuery):
     await bot.edit_message_text("Nechchi soat", chat_id, call.message.message_id, reply_markup=markup)
 
 
+# func=lambda call: "hour" in call.data.split('|'),is_admin=False
 async def hour_choose(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
     hour = int(call.data.split("|")[1])
     async with bot.retrieve_data(user_id, chat_id) as data:
-        print(data)
         data["hour"] = hour
         region_filter = data["region_name"]
         district_filter = data["district_name"]
@@ -102,10 +107,14 @@ async def hour_choose(call: CallbackQuery):
         # Execute the query asynchronously to get the result
         result = await session.execute(query)
         stadiums = result.scalars().all()
-        await bot.send_message(chat_id, "Stadionlar", reply_markup=markup)
-        await bot.send_message(chat_id, "Tanlang", reply_markup=stadiums_inline(stadiums))
+        if stadiums is None or len(stadiums) == 0:
+            await bot.send_message(chat_id, "Berilgan filterlar boyicha stadionlar mavjud emas yoki Band!", reply_markup=markup)
+        else:
+            await bot.send_message(chat_id, "Stadionlar", reply_markup=markup)
+            await bot.send_message(chat_id, "Tanlang", reply_markup=stadiums_inline(stadiums))
 
 
+# func=lambda call: "book" in call.data.split("|")
 async def stadium_preview(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -116,14 +125,13 @@ async def stadium_preview(call: CallbackQuery):
     async with Session.begin() as db:
         stadium_q = select(Stadium).where(Stadium.id == data)
         stadium = (await db.execute(stadium_q)).scalar()
-        message = f"""
-        <b>Nomi:</b> {stadium.name}
-        <b>Ma'lumot:</b> {stadium.description}
-        <b>Narxi:</b> {stadium.price} so'm/soat
-        <b>Ochilish vaqti:</b> {stadium.opening_time}
-        <b>Yopilish vaqti:</b> {stadium.closing_time}
-        <b>Viloyat:</b> {stadium.region}
-        <b>Tuman:</b> <i>{stadium.district}</i>"""
+        message = f"""<b>Nomi:</b> {stadium.name}
+<b>Ma'lumot:</b> {stadium.description}
+<b>Narxi:</b> {stadium.price} so'm/soat
+<b>Ochilish vaqti:</b> {stadium.opening_time}
+<b>Yopilish vaqti:</b> {stadium.closing_time}
+<b>Viloyat:</b> {stadium.region}
+<b>Tuman:</b> <i>{stadium.district}</i>"""
         bdata["location"] = stadium.location
         image_urls = json.loads(stadium.image_urls)
         images = []
@@ -134,6 +142,7 @@ async def stadium_preview(call: CallbackQuery):
         await bot.answer_callback_query(call.id, f"stadion {stadium.name}")
 
 
+# func=lambda call: call.data in ["book_now", "send_location"],is_admin=False
 async def location_book(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -154,8 +163,26 @@ async def location_book(call: CallbackQuery):
             async with Session() as db:
                 db.add(new_order)
                 await db.commit()
+                await db.refresh(new_order)
+
+            async with Session() as db:
+                q_s = select(Stadium).where(Stadium.id == new_order.stadium_id)
+                q_u = select(User).where(User.id == new_order.user_id)
+                stadium = (await (db.execute(q_s))).scalar()
+                user = (await (db.execute(q_u))).scalar()
+                text = f"""<b>Stadion</b>: <code>{stadium.name}</code>
+<b>Boshlanish vaqti</b>: <code>{combined_datetime}</code>
+<b>Soat</b>: <code>{hour}</code>
+
+<b>Buyurtmachi</b>: <b>{user.username}</b> 
+<b>raqami</b>: <code>{user.number}</code>
+<b>email</b>: <code>{user.email}</code>
+
+#{stadium.region.replace(" ", "_")}, #{stadium.district.replace(" ", "_")}, #{stadium.name.replace(" ", "_")}
+"""
             await bot.answer_callback_query(call.id, f"Bajarildi✅")
             await bot.send_message(chat_id, "Stadion bron qilindi", reply_markup=main_menu_markup())
+            await bot.send_message(-1002049070221, text, parse_mode="html")
             await bot.set_state(user_id, user_sts.main, chat_id)
 
         except Exception as e:

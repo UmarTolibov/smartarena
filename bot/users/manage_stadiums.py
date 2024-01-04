@@ -6,6 +6,7 @@ from .markups.buttons import *
 from .markups.inline_buttons import *
 
 
+# regexp="🛠️Stadionlarimni boshqarish",state=stadium_sts.init
 async def manage_stadium_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -18,6 +19,7 @@ async def manage_stadium_handler(message: Message):
     await bot.set_state(user_id, manage_sts.choose_stadium, chat_id)
 
 
+# func=lambda call: "stadium" in call.data.split("|"),state=manage_sts.choose_stadium
 async def stadium_to_manage(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -46,6 +48,7 @@ async def stadium_to_manage(call: CallbackQuery):
         await bot.answer_callback_query(call.id, "yangilash")
 
 
+# func=lambda call: True,state=manage_sts.edit
 async def delete_stadium(call: CallbackQuery):
     if call.data.split("|")[1] == "delete":
         chat_id = call.message.chat.id
@@ -60,6 +63,7 @@ async def delete_stadium(call: CallbackQuery):
             await bot.delete_message(chat_id, call.message.message_id)
 
 
+# func=lambda call: True,state=manage_sts.edit
 async def refresh_stadium(call: CallbackQuery):
     if call.data.split("|")[1] == "refresh":
         chat_id = call.message.chat.id
@@ -94,56 +98,59 @@ async def refresh_stadium(call: CallbackQuery):
                 data["sent_message"] = sent_message.message_id
 
 
+# func=lambda call: call.data.split("|")[1] in ["name", "desc", "image_urls","price", "otime", "ctime", "reg","disc", "location"],state=manage_sts.edit
 async def edit_stadium_data(call: CallbackQuery):
-    if call.data.split("|")[1] in ["name", "desc", "image_urls", "price", "otime", "ctime", "region",
-                                   "disc", "location"]:
-        from utils.config import regions_file_path
-        chat_id = call.message.chat.id
-        user_id = call.from_user.id
-        target = call.data.split("|")[1]
-        stadium_id = int(call.data.split("|")[2])
-        async with Session.begin() as db:
-            stadium_region = (await db.execute(select(Stadium.region).where(Stadium.id == stadium_id))).scalar()
-        with open(regions_file_path, "r", encoding="utf-8") as file:
-            region_id = list(filter(lambda x: x["name"] == stadium_region, json.load(file)["regions"]))[0]["id"]
-            if target == "location":
-                sent = await bot.send_message(chat_id, "Yangi Lokatsiyani jo'nating",
-                                              reply_markup=request_location())
-                await bot.set_state(user_id, manage_sts.location, chat_id)
-            elif target == "image":
-                sent = await bot.send_message(chat_id, "Yangi Rasmlarni jo'nating va tugmani bosing",
-                                              reply_markup=done())
-                await bot.set_state(user_id, manage_sts.image, chat_id)
-            elif target == "region":
-                sent = await bot.send_message(chat_id, "Yangi Viloyatni tanlang", reply_markup=regions_inline(1))
-                await bot.set_state(user_id, manage_sts.region, chat_id)
-            elif target == "disc":
-                sent = await bot.send_message(chat_id, "Yangi Tumanni tanlang",
-                                              reply_markup=district_inline(region_id, for_add=1))
-                await bot.set_state(user_id, manage_sts.district, chat_id)
-            elif target == "otime":
-                sent = await bot.send_message(chat_id, "Ochilish vaqtini o'zgartirish",
-                                              reply_markup=start_time_inline(1))
-                await bot.set_state(user_id, manage_sts.open_time, chat_id)
-            elif target == "ctime":
-                sent = await bot.send_message(chat_id, "Yopilish vaqtini o'zgartirish",
-                                              reply_markup=start_time_inline(2))
-                await bot.set_state(user_id, manage_sts.close_time, chat_id)
-            elif target == "name":
-                sent = await bot.send_message(chat_id, "Stadion uchun yangi nomni jo'nating")
-                await bot.set_state(user_id, manage_sts.name, chat_id)
-            elif target == "price":
-                sent = await bot.send_message(chat_id, "Stadion uchun yangi narxni jo'nating")
-                await bot.set_state(user_id, manage_sts.price, chat_id)
-            else:
-                sent = await bot.send_message(chat_id, "Stadion uchun yangi ma'lumotni jo'nating")
-                await bot.set_state(user_id, manage_sts.description, chat_id)
-            await bot.answer_callback_query(call.id, "yangilash")
-            async with bot.retrieve_data(user_id, chat_id) as data:
-                data["edit_stadium_id"] = stadium_id
-                data["sent_message_id"] = sent.message_id
+    print(call.data + "_+" * 23)
+
+    from utils.config import regions_file_path
+
+    chat_id = call.message.chat.id
+    user_id = call.from_user.id
+    target = call.data.split("|")[1]
+    stadium_id = int(call.data.split("|")[2])
+    async with Session.begin() as db:
+        stadium_region = (await db.execute(select(Stadium.region).where(Stadium.id == stadium_id))).scalar()
+    with open(regions_file_path, "r", encoding="utf-8") as file:
+        region_id = list(filter(lambda x: x["name"] == stadium_region, json.load(file)["regions"]))[0]["id"]
+        if target == "location":
+            sent = await bot.send_message(chat_id, "Yangi Lokatsiyani jo'nating",
+                                          reply_markup=request_location())
+            await bot.set_state(user_id, manage_sts.location, chat_id)
+        elif target == "image":
+            sent = await bot.send_message(chat_id, "Yangi Rasmlarni jo'nating va tugmani bosing",
+                                          reply_markup=done())
+            await bot.set_state(user_id, manage_sts.image, chat_id)
+        elif target == "reg":
+            sent = await bot.send_message(chat_id, "Yangi Viloyatni tanlang", reply_markup=regions_inline(1))
+            await bot.set_state(user_id, manage_sts.region, chat_id)
+        elif target == "disc":
+            sent = await bot.send_message(chat_id, "Yangi Tumanni tanlang",
+                                          reply_markup=district_inline(region_id, for_add=1))
+            await bot.set_state(user_id, manage_sts.district, chat_id)
+        elif target == "otime":
+            sent = await bot.send_message(chat_id, "Ochilish vaqtini o'zgartirish",
+                                          reply_markup=start_time_inline(1))
+            await bot.set_state(user_id, manage_sts.open_time, chat_id)
+        elif target == "ctime":
+            sent = await bot.send_message(chat_id, "Yopilish vaqtini o'zgartirish",
+                                          reply_markup=start_time_inline(2))
+            await bot.set_state(user_id, manage_sts.close_time, chat_id)
+        elif target == "name":
+            sent = await bot.send_message(chat_id, "Stadion uchun yangi nomni jo'nating")
+            await bot.set_state(user_id, manage_sts.name, chat_id)
+        elif target == "price":
+            sent = await bot.send_message(chat_id, "Stadion uchun yangi narxni jo'nating")
+            await bot.set_state(user_id, manage_sts.price, chat_id)
+        else:
+            sent = await bot.send_message(chat_id, "Stadion uchun yangi ma'lumotni jo'nating")
+            await bot.set_state(user_id, manage_sts.description, chat_id)
+        await bot.answer_callback_query(call.id, "yangilash")
+        async with bot.retrieve_data(user_id, chat_id) as data:
+            data["edit_stadium_id"] = stadium_id
+            data["sent_message_id"] = sent.message_id
 
 
+# content_types=["text"],state=manage_sts.name
 async def stadium_edit_name_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -161,6 +168,7 @@ async def stadium_edit_name_handler(message: Message):
     await bot.delete_message(chat_id, sent.message_id)
 
 
+# content_types=["text"],state=manage_sts.description
 async def stadium_desc_edit_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -178,6 +186,7 @@ async def stadium_desc_edit_handler(message: Message):
     await bot.delete_message(chat_id, sent.message_id)
 
 
+# content_types=["location"],state=manage_sts.location
 async def stadium_edit_location_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -195,6 +204,7 @@ async def stadium_edit_location_handler(message: Message):
     await bot.delete_message(chat_id, sent.message_id)
 
 
+# content_types=["photo", "text"],state=manage_sts.image
 async def stadium_edit_image_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -215,6 +225,7 @@ async def stadium_edit_image_handler(message: Message):
         await bot.delete_message(chat_id, sent.message_id)
 
 
+# content_types=["text"],state=manage_sts.price
 async def stadium_edit_price_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -232,6 +243,7 @@ async def stadium_edit_price_handler(message: Message):
         await bot.delete_message(chat_id, sent.message_id)
 
 
+# func=lambda call: "s_time" in call.data.split("|"),state=manage_sts.open_time
 async def stadium_edit_open_time_handler(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -249,6 +261,7 @@ async def stadium_edit_open_time_handler(call: CallbackQuery):
         await bot.delete_message(chat_id, sent.message_id)
 
 
+# func=lambda call: "c_time" in call.data.split("|"),state=manage_sts.close_time
 async def stadium_edit_close_time_handler(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -267,10 +280,12 @@ async def stadium_edit_close_time_handler(call: CallbackQuery):
         await bot.delete_message(chat_id, sent.message_id)
 
 
+# func=lambda call: "add_region" in call.data.split('|'),state=manage_sts.region
 async def stadium_edit_region_handler(call: CallbackQuery):
     from utils.config import regions_file_path
     chat_id = call.message.chat.id
     user_id = call.from_user.id
+    print(call.data)
     region_id = int(call.data.split("|")[1])
 
     async with bot.retrieve_data(user_id, chat_id) as data:
@@ -289,10 +304,12 @@ async def stadium_edit_region_handler(call: CallbackQuery):
         await bot.delete_message(chat_id, sent.message_id)
 
 
+# func=lambda call: "add_district" in call.data.split('|'),state=manage_sts.district
 async def edit_district_choose(call: CallbackQuery):
     from utils.config import regions_file_path
     chat_id = call.message.chat.id
     user_id = call.from_user.id
+    print(call.data)
     district_id = int(call.data.split("|")[1])
     async with bot.retrieve_data(user_id, chat_id) as data:
         await bot.delete_message(chat_id, data["sent_message_id"])
@@ -300,7 +317,6 @@ async def edit_district_choose(call: CallbackQuery):
         with open(regions_file_path, "r", encoding="utf-8") as file:
             district = json.load(file)["districts"][district_id - 15]["name"]
     async with Session.begin() as db:
-        print(district)
         q = update(Stadium).where(Stadium.id == stadium_id).values(district=district)
         await db.execute(q)
         await db.commit()
