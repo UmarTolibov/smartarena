@@ -1,6 +1,7 @@
+from sqlalchemy import select
 from telebot.types import Message, ReplyKeyboardRemove, CallbackQuery
 from bot.loader import bot, stadium_sts, user_sts
-from database import Stadium, Session
+from database import Stadium, Session, User, UserSessions
 from .markups.buttons import *
 from .markups.inline_buttons import *
 
@@ -9,14 +10,25 @@ from .markups.inline_buttons import *
 async def my_stadium_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
-    await bot.send_message(chat_id, "Stadionlar", reply_markup=your_stadiums_markup())
-    await bot.set_state(user_id, stadium_sts.init, chat_id)
+    async with Session.begin() as db:
+        q = select(User).join(UserSessions, User.id == UserSessions.user_id).where(UserSessions.telegram_id == user_id)
+        user_owner = (await db.execute(q)).scalar().is_owner
+    if user_owner:
+        await bot.send_message(chat_id, "Stadionlar", reply_markup=your_stadiums_markup())
+        await bot.set_state(user_id, stadium_sts.init, chat_id)
+    else:
+        return
 
 
 # regexp="🌐Stadion qo'shish"
 async def add_stadium_handler(message: Message):
     chat_id = message.chat.id
-    await bot.send_message(chat_id, """<b>Stadion yaratish uchun quydagi malumotlar kerak boladi</b>
+    user_id = message.from_user.id
+    async with Session.begin() as db:
+        q = select(User).join(UserSessions, User.id == UserSessions.user_id).where(UserSessions.telegram_id == user_id)
+        user_owner = (await db.execute(q)).scalar().is_owner
+    if user_owner:
+        await bot.send_message(chat_id, """<b>Stadion yaratish uchun quydagi malumotlar kerak boladi</b>
 <i>-Stadion Nomi</i>
 <i>-Kantakt malumotlari</i>
 <i>-Stadion Rasmlar</i>
@@ -26,8 +38,9 @@ async def add_stadium_handler(message: Message):
 <i>-Viloyat</i>
 <i>-Tuman</i>
 <i>-Lakatsiya</i>""", reply_markup=back(), parse_mode="html")
-    await bot.send_message(chat_id, "Davom ettirasizmi?", reply_markup=yes_no_inline())
-
+        await bot.send_message(chat_id, "Davom ettirasizmi?", reply_markup=yes_no_inline())
+    else:
+        return
 
 # func=lambda call: "proceed" in call.data.split("|"),is_admin=False
 async def proceed_yes_no(call: CallbackQuery):
@@ -41,7 +54,7 @@ async def proceed_yes_no(call: CallbackQuery):
         await bot.set_state(user_id, stadium_sts.name, chat_id)
     else:
         await bot.answer_callback_query(call.id, "Bekor qilindi", )
-        await bot.send_message(chat_id, "Bosh sahifa", reply_markup=main_menu_markup())
+        await bot.send_message(chat_id, "Bosh sahifa", reply_markup=main_menu_markup(True))
 
 
 # content_types=["text"],state=stadium_sts.name
@@ -189,7 +202,7 @@ async def stadium_confirmation_handler(callback: CallbackQuery):
             async with Session() as db:
                 db.add(new_stadium)
                 await db.commit()
-            await bot.send_message(chat_id, "Stadion qo'shildi.", reply_markup=main_menu_markup())
+            await bot.send_message(chat_id, "Stadion qo'shildi.", reply_markup=main_menu_markup(True))
             await bot.set_state(user_id, user_sts.main, chat_id)
         except Exception as e:
             print(e)

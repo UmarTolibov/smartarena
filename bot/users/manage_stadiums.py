@@ -1,7 +1,7 @@
 from sqlalchemy import select, delete, update
 from telebot.types import Message, CallbackQuery, InputMediaPhoto
 from bot.loader import bot, stadium_sts, manage_sts
-from database import Stadium, Session
+from database import Stadium, Session, User, UserSessions
 from .markups.buttons import *
 from .markups.inline_buttons import *
 
@@ -10,16 +10,23 @@ from .markups.inline_buttons import *
 async def manage_stadium_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
-    async with bot.retrieve_data(user_id, chat_id) as data:
-        stadiums_query = select(Stadium.name, Stadium.id).where(Stadium.user_id == data["user_id"])
     async with Session.begin() as db:
-        stadiums = (await db.execute(stadiums_query)).fetchall()
-        markup = stadiums_choose(stadiums)
-    await bot.send_message(chat_id, "Stadionni tanlang", reply_markup=markup)
-    await bot.set_state(user_id, manage_sts.choose_stadium, chat_id)
+        q = select(User).join(UserSessions, User.id == UserSessions.user_id).where(UserSessions.telegram_id == user_id)
+        user_owner = (await db.execute(q)).scalar().is_owner
+    if user_owner:
+        async with bot.retrieve_data(user_id, chat_id) as data:
+            stadiums_query = select(Stadium.name, Stadium.id).where(Stadium.user_id == data["user_id"])
+        async with Session.begin() as db:
+            stadiums = (await db.execute(stadiums_query)).fetchall()
+            markup = stadiums_choose(stadiums)
+        await bot.send_message(chat_id, "Stadionni tanlang", reply_markup=markup)
+        await bot.set_state(user_id, manage_sts.choose_stadium, chat_id)
+    else:
+        return
+
+    # func=lambda call: "stadium" in call.data.split("|"),state=manage_sts.choose_stadium
 
 
-# func=lambda call: "stadium" in call.data.split("|"),state=manage_sts.choose_stadium
 async def stadium_to_manage(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id

@@ -1,4 +1,5 @@
 import datetime
+import random
 
 from sqlalchemy import select, func, exists, and_
 from sqlalchemy.exc import IntegrityError
@@ -128,9 +129,18 @@ async def admin_hour_choose(call: CallbackQuery):
     user_id = call.from_user.id
     hour = int(call.data.split("|")[1])
     async with bot.retrieve_data(user_id, chat_id) as data:
+        try:
+            quick = data["quick_booking"]
+        except KeyError:
+            quick = False
         data["hour"] = hour
-        region_filter = data["region_name"]
-        district_filter = data["district_name"]
+        if not quick:
+            region_filter = data["region_name"]
+            district_filter = data["district_name"]
+        else:
+            print(data["last_book_loc"])
+            region_filter = data["last_book_loc"][0][0]
+            district_filter = data["last_book_loc"][0][1]
         start_time_str = data["start_time"]
         date_str = data["date"]
         date_object = datetime.datetime.strptime(date_str.replace(":", "-"), "%Y-%m-%d")
@@ -157,8 +167,13 @@ async def admin_hour_choose(call: CallbackQuery):
         # Execute the query asynchronously to get the result
         result = await session.execute(query)
         stadiums = result.scalars().all()
-        await bot.send_message(chat_id, "Stadionlar", reply_markup=markup)
-        await bot.send_message(chat_id, "Tanlang", reply_markup=stadiums_inline(stadiums))
+        if stadiums is None or len(stadiums) == 0:
+            await bot.send_message(chat_id, "Berilgan filterlar boyicha stadionlar mavjud emas yoki Band!",
+                                   reply_markup=markup)
+        else:
+            await bot.set_state(user_id, user_sts.preview, chat_id)
+            await bot.send_message(chat_id, "Stadionlar", reply_markup=markup)
+            await bot.send_message(chat_id, "Tanlang", reply_markup=stadiums_inline(stadiums))
 
 
 # func=lambda call: call.data in ["book_now", "send_location"], is_admin=True
@@ -178,12 +193,39 @@ async def admin_location_book(call: CallbackQuery):
             new_order = Order(status="Ko'rib chiqilmoqda", start_time=combined_datetime, hour=hour,
                               user_id=data["user_id"],
                               stadium_id=data["stadium_id"])
+
         try:
             async with Session() as db:
                 db.add(new_order)
                 await db.commit()
+                await db.refresh(new_order)
+
+            async with Session() as db:
+                q = select(User).join(UserSessions, User.id == UserSessions.user_id).where(
+                    UserSessions.telegram_id == user_id)
+                user_owner = (await db.execute(q)).scalar().is_owner
+
+                q_s = select(Stadium).where(Stadium.id == new_order.stadium_id)
+                q_u = select(User).where(User.id == new_order.user_id)
+                stadium = (await (db.execute(q_s))).scalar()
+                user = (await (db.execute(q_u))).scalar()
+                owner_id = (await (db.execute(
+                    select(UserSessions.telegram_id).where(UserSessions.user_id == stadium.user_id)))).scalar()
+                text = f"""<b>Stadion</b>: <code>{stadium.name}</code>
+<b>Boshlanish vaqti</b>: <code>{combined_datetime}</code>
+<b>Soat</b>: <code>{hour}</code>
+    
+<b>Buyurtmachi</b>: <b>{user.username}</b> 
+<b>raqami</b>: <code>{user.number}</code>
+<b>email</b>: <code>{user.email}</code>
+    
+#{stadium.region.replace(" ", "_")}, #{stadium.district.replace(" ", "_")}, #{stadium.name.replace(" ", "_")}
+"""
+            print(owner_id, '_____________________')
             await bot.answer_callback_query(call.id, f"Bajarildi✅")
-            await bot.send_message(chat_id, "Stadion bron qilindi", reply_markup=main_menu_markup())
+            await bot.send_message(chat_id, "Stadion bron qilindi", reply_markup=main_menu_markup(user_owner))
+            await bot.send_message(-1002049070221, text, parse_mode="html")
+            await bot.send_message(owner_id, text, parse_mode="html")
             await bot.set_state(user_id, user_sts.main, chat_id)
 
         except Exception as e:
@@ -192,4 +234,5 @@ async def admin_location_book(call: CallbackQuery):
         await bot.answer_callback_query(call.id, f"Lokatsiya")
         async with bot.retrieve_data(user_id, chat_id) as bdata:
             location = bdata["location"]
+        await bot.set_state(user_id, user_sts.loc_book, chat_id)
         await bot.send_location(chat_id, **location, reply_markup=book_inline(True))

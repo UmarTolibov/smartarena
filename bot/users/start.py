@@ -17,13 +17,16 @@ async def greeting(message: Message):
             user_check_q = select(User.username, User.id).join(UserSessions, User.id == UserSessions.user_id).where(
                 UserSessions.telegram_id == user_id)
             user_check = (await db.execute(user_check_q)).fetchall()
+            q = select(User).join(UserSessions, User.id == UserSessions.user_id).where(
+                UserSessions.telegram_id == user_id)
+            user_owner = (await db.execute(q)).scalar().is_owner
 
         if len(user_check) >= 2:
             markup = accounts_inline(user_check)
             await bot.send_message(chat_id, "Qaysi akkaunt bilan davom ettirmoqchisiz?", reply_markup=markup)
             await bot.set_state(user_id, auth_sts.account, chat_id)
         else:
-            await bot.send_message(chat_id, f"Salom {user_check[0].username}", reply_markup=main_menu_markup())
+            await bot.send_message(chat_id, f"Salom {user_check[0].username}", reply_markup=main_menu_markup(user_owner))
             await bot.set_state(user_id, user_sts.main, chat_id)
         async with bot.retrieve_data(user_id, chat_id) as data:
             data["user_id"] = user_check[0][1]
@@ -38,8 +41,13 @@ async def choose_account_handler(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
     user_db_id = int(call.data.split("|")[1])
+    async with Session.begin() as db:
+        q = select(User).join(UserSessions, User.id == UserSessions.user_id).where(
+            UserSessions.telegram_id == user_id)
+        user_owner = (await db.execute(q)).scalar().is_owner
+
     async with bot.retrieve_data(user_id, chat_id) as data:
         data["user_id"] = user_db_id
         await bot.delete_message(chat_id, call.message.message_id)
-        await bot.send_message(chat_id, f"Tizimga kirildi", reply_markup=main_menu_markup())
+        await bot.send_message(chat_id, f"Tizimga kirildi", reply_markup=main_menu_markup(user_owner))
         await bot.set_state(user_id, user_sts.main, chat_id)

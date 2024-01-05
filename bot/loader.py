@@ -8,8 +8,7 @@ from telebot import asyncio_filters
 from telebot.types import Update, BotCommand
 
 from database import Session, User, UserSessions
-from .states import Auth, UserState, StadiumState, ManageStadiums, MyBookings, Settings, Help, SuperUserState, \
-    NeutralState
+from .states import Auth, UserState, StadiumState, ManageStadiums, MyBookings, Settings, Help, SuperUserState
 from .antiflood import SimpleMiddleware, HandleException
 from utils import TOKEN
 

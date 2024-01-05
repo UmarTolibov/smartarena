@@ -1,3 +1,5 @@
+import random
+
 from sqlalchemy import select, func, exists, and_
 from sqlalchemy.orm import aliased
 from telebot.types import Message, ReplyKeyboardRemove, CallbackQuery, InputMediaPhoto
@@ -24,11 +26,16 @@ async def book_stadium(message: Message):
         await bot.set_state(user_id, user_sts.region, chat_id)
     else:
         stadiums = []
+        location = []
         for i in stadium:
             if (i.name, i.id) not in stadiums:
                 stadiums.append((i.name, i.id))
+
+            if (i.region, i.district) not in location:
+                location.append((i.region, i.district))
         async with bot.retrieve_data(user_id, chat_id) as data:
             data["last_books"] = stadiums
+            data["last_book_loc"] = location
         await bot.send_message(chat_id, "Bron qilish", reply_markup=quickbook_simplebook())
 
 
@@ -45,11 +52,12 @@ async def simple_book_stadium(message: Message):
 async def quick_book_stadium(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
+    markup = date_time()
     async with bot.retrieve_data(user_id, chat_id) as data:
-        markup = booked_stadiums_choose(data["last_books"])
-    await bot.send_message(chat_id, "Bronlar", reply_markup=back())
-    await bot.send_message(chat_id, "Stadionni tanlang!", reply_markup=markup)
-    await bot.set_state(user_id, user_sts.preview, chat_id)
+        data["quick_booking"] = True
+    await bot.send_message(chat_id, "Sanani tanlang", reply_markup=back())
+    await bot.send_message(chat_id, "Sana:", reply_markup=markup)
+    await bot.set_state(user_id, user_sts.date, chat_id)
 
 
 # func=lambda call: "region" in call.data.split('|'), state=user_sts.region
@@ -117,18 +125,31 @@ async def hour_choose(call: CallbackQuery):
     user_id = call.from_user.id
     hour = int(call.data.split("|")[1])
     async with bot.retrieve_data(user_id, chat_id) as data:
+        try:
+            quick = data["quick_booking"]
+        except KeyError:
+            quick = False
         data["hour"] = hour
-        region_filter = data["region_name"]
-        district_filter = data["district_name"]
+        if not quick:
+            region_filter = data["region_name"]
+            district_filter = data["district_name"]
+        else:
+            print(data["last_book_loc"])
+            region_filter = data["last_book_loc"][0][0]
+            district_filter = data["last_book_loc"][0][1]
+            print(region_filter, district_filter)
         start_time_str = data["start_time"]
         date_str = data["date"]
         date_object = datetime.datetime.strptime(date_str.replace(":", "-"), "%Y-%m-%d")
         start_time_delta = datetime.datetime.strptime(start_time_str, "%H:%M").time()
         combined_datetime = datetime.datetime.combine(date_object, start_time_delta)
         hour_filter = data["hour"]
-        markup = main_menu_markup()
     await bot.answer_callback_query(call.id, "Stadionlar")
     async with Session() as session:
+        q = select(User).join(UserSessions, User.id == UserSessions.user_id).where(
+            UserSessions.telegram_id == user_id)
+        user_owner = (await session.execute(q)).scalar().is_owner
+        markup = main_menu_markup(user_owner)
         order_alias = aliased(Order)
         query = (
             select(Stadium)
@@ -157,6 +178,7 @@ async def hour_choose(call: CallbackQuery):
 
 # func=lambda call: "book" in call.data.split("|"),state=user_sts.preview
 async def stadium_preview(call: CallbackQuery):
+    print("adsfsdf")
     chat_id = call.message.chat.id
     user_id = call.from_user.id
     data = int(call.data.split("|")[1])
@@ -208,10 +230,16 @@ async def location_book(call: CallbackQuery):
                 await db.refresh(new_order)
 
             async with Session() as db:
+                q = select(User).join(UserSessions, User.id == UserSessions.user_id).where(
+                    UserSessions.telegram_id == user_id)
+                user_owner = (await db.execute(q)).scalar().is_owner
+
                 q_s = select(Stadium).where(Stadium.id == new_order.stadium_id)
                 q_u = select(User).where(User.id == new_order.user_id)
                 stadium = (await (db.execute(q_s))).scalar()
                 user = (await (db.execute(q_u))).scalar()
+                owner_id = (await (db.execute(
+                    select(UserSessions.telegram_id).where(UserSessions.user_id == stadium.user_id)))).scalar()
                 text = f"""<b>Stadion</b>: <code>{stadium.name}</code>
 <b>Boshlanish vaqti</b>: <code>{combined_datetime}</code>
 <b>Soat</b>: <code>{hour}</code>
@@ -222,9 +250,11 @@ async def location_book(call: CallbackQuery):
 
 #{stadium.region.replace(" ", "_")}, #{stadium.district.replace(" ", "_")}, #{stadium.name.replace(" ", "_")}
 """
+            print(owner_id,'_____________________')
             await bot.answer_callback_query(call.id, f"Bajarildi✅")
-            await bot.send_message(chat_id, "Stadion bron qilindi", reply_markup=main_menu_markup())
+            await bot.send_message(chat_id, "Stadion bron qilindi", reply_markup=main_menu_markup(user_owner))
             await bot.send_message(-1002049070221, text, parse_mode="html")
+            await bot.send_message(owner_id, text, parse_mode="html")
             await bot.set_state(user_id, user_sts.main, chat_id)
 
         except Exception as e:

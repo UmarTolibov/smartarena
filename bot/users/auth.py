@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from bot.loader import bot, auth_sts, user_sts
 from database import User, UserSessions
 from utils.utils import check_phone_number
-from .markups import confirmation
+from .markups import confirmation, owner_or_user
 from .markups.buttons import *
 from database.connection import Session
 
@@ -36,15 +36,33 @@ async def number_handler(message: Message):
     user_id = message.from_user.id
     async with bot.retrieve_data(user_id, chat_id) as data:
         data["number"] = message.text if message.content_type == "text" else message.contact.phone_number
-    if check_phone_number(message.text) and message.content_type == "text":
+    if message.content_type == "text" and check_phone_number(message.text):
 
-        await bot.send_message(chat_id, "Akountingiz uchun parolni kiriting", reply_to_message_id=message.message_id,
-                               reply_markup=ReplyKeyboardRemove())
-        await bot.set_state(user_id, auth_sts.password, chat_id)
+        await bot.send_message(chat_id, "Siz foydalanuvchimisiz yoki Stadion egasi",
+                               reply_to_message_id=message.message_id,
+                               reply_markup=owner_or_user())
+        await bot.set_state(user_id, auth_sts.type, chat_id)
+    elif message.content_type == "contact":
+        await bot.send_message(chat_id, "Siz foydalanuvchimisiz yoki Stadion egasi",
+                               reply_to_message_id=message.message_id,
+                               reply_markup=owner_or_user())
+        await bot.set_state(user_id, auth_sts.type, chat_id)
     else:
         await bot.send_message(chat_id,
                                "Noto'g'ri raqam kiritdingiz!\nTo'gri raqam formati: <b>+998901234567</b>\nqaytadan urinib ko'ring",
                                parse_mode="html", reply_to_message_id=message.message_id)
+
+
+async def user_type(callback: CallbackQuery):
+    chat_id = callback.message.chat.id
+    user_id = callback.from_user.id
+    call_data = bool(int(callback.data.split("|")[1]))
+    utype = "Stadion Egasi" if call_data else "Foydalanuvchi"
+    async with bot.retrieve_data(user_id, chat_id) as data:
+        data["is_owner"] = call_data
+    await bot.answer_callback_query(callback.id, f"{utype}")
+    await bot.send_message(chat_id, "Akountingiz uchun parolni kiriting", reply_markup=ReplyKeyboardRemove())
+    await bot.set_state(user_id, auth_sts.password, chat_id)
 
 
 # content_types=["text"], state=auth_sts.password
@@ -75,21 +93,27 @@ async def confirmation_inline(callback: CallbackQuery):
             password += data["password"]
             user_data["password"] = generate_password_hash(data['password'])
             user_data["number"] = data['number']
+            user_data["is_owner"] = data["is_owner"]
             user_data["username"] = data['name'].lower().replace(" ", "_") + data["number"][9:-2]
+            print(user_data)
         try:
             async with Session() as db:
                 new_user = User(**user_data)
                 db.add(new_user)
+
                 await db.commit()
                 await db.refresh(new_user)
                 user_data["user_id"] = new_user.id
                 new_session = UserSessions(telegram_id=user_id, user_id=new_user.id)
                 db.add(new_session)
                 await db.commit()
+                q = select(User).join(UserSessions, User.id == UserSessions.user_id).where(
+                    UserSessions.telegram_id == user_id)
+                user_owner = (await db.execute(q)).scalar().is_owner
                 await bot.answer_callback_query(callback.id, "Tasiqlandi")
                 await bot.send_message(chat_id,
                                        f"Bu ma\'lumotlarni saqlab qoying\n<code>username: {user_data['username']}\npassword: {password}</code>",
-                                       parse_mode="html", reply_markup=main_menu_markup())
+                                       parse_mode="html", reply_markup=main_menu_markup(user_owner))
             async with bot.retrieve_data(user_id, chat_id) as data:
                 data["user_id"] = user_data["user_id"]
                 await bot.set_state(user_id, user_sts.main, chat_id)
@@ -148,6 +172,7 @@ async def login_password_(message: Message):
     async with Session() as db:
         user = (await db.execute(user_q)).scalar()
         data["user_id"] = user.id
+        is_owner = user.is_owner
         if user and check_password_hash(user.password, password):
             try:
                 new_session = UserSessions(user_id=user.id, telegram_id=user_id)
@@ -156,7 +181,7 @@ async def login_password_(message: Message):
             except IntegrityError as e:
                 print(e)
 
-            await bot.send_message(chat_id, "Tizimga kirdingiz!", reply_markup=main_menu_markup())
+            await bot.send_message(chat_id, "Tizimga kirdingiz!", reply_markup=main_menu_markup(is_owner))
             await bot.set_state(user_id, user_sts.main, chat_id)
         else:
             await bot.send_message(chat_id, "Parol noto\'g\'ri!")

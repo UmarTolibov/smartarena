@@ -45,6 +45,8 @@ async def user_register_handlers():
     bot.register_message_handler(users.auth.signup_handler, regexp="Ro'yxatdan o'tish🗒", state=auth_sts.init)
     bot.register_message_handler(users.auth.name_handler, content_types=["text"], state=auth_sts.name)
     bot.register_message_handler(users.auth.number_handler, content_types=["text", "contact"], state=auth_sts.number)
+    bot.register_callback_query_handler(users.auth.user_type, func=lambda call: call.data.split("|")[0] == "user_type",
+                                        state=auth_sts.type)
     bot.register_message_handler(users.auth.password_handler, content_types=["text"], state=auth_sts.password)
     bot.register_callback_query_handler(users.auth.confirmation_inline, func=lambda x: True, state=auth_sts.confirm)
     bot.register_message_handler(users.auth.login_handler, regexp="Kirish↙️", state=auth_sts.init)
@@ -69,7 +71,7 @@ async def user_register_handlers():
                                         func=lambda call: "start_time" in call.data.split('|'),
                                         state=user_sts.start_time)
     bot.register_callback_query_handler(users.booking.hour_choose, func=lambda call: "hour" in call.data.split('|'),
-                                        is_admin=False, state=user_sts.hour)
+                                        state=user_sts.hour, is_admin=False)
     bot.register_callback_query_handler(users.booking.stadium_preview, func=lambda call: "book" in call.data.split("|"),
                                         state=user_sts.preview)
     bot.register_callback_query_handler(users.booking.location_book,
@@ -162,6 +164,9 @@ async def superuser_register_handlers():
     bot.register_callback_query_handler(superusers.start.admin_proceed_yes_no,
                                         func=lambda call: "proceed" in call.data.split("|"), is_admin=True)
     bot.register_callback_query_handler(superusers.start.admin_hour_choose,
-                                        func=lambda call: "hour" in call.data.split('|'), is_admin=True)
+                                        func=lambda call: "hour" in call.data.split('|'), state=user_sts.hour,
+                                        is_admin=True)
     bot.register_callback_query_handler(superusers.start.admin_location_book,
-                                        func=lambda call: call.data in ["book_now", "send_location"], is_admin=True)
+                                        func=lambda call: call.data in ["book_now", "send_location"],
+                                        state=user_sts.loc_book, is_admin=True
+                                        )

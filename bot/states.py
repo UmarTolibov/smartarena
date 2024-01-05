@@ -6,6 +6,7 @@ class Auth(StatesGroup):
     account = State()
     name = State()
     number = State()
+    type = State()
     password = State()
     confirm = State()
     username = State()

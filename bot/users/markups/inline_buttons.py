@@ -95,8 +95,10 @@ def start_time_inline(for_add=0):
             row_buttons.append(InlineKeyboardButton(time, callback_data=f"start_time|{time}"))
         elif for_add == 1:
             row_buttons.append(InlineKeyboardButton(time, callback_data=f"s_time|{time}"))
-        else:
+        elif for_add == 2:
             row_buttons.append(InlineKeyboardButton(time, callback_data=f"c_time|{time}"))
+        else:
+            row_buttons.append(InlineKeyboardButton(time, callback_data=f"q_time|{time}"))
 
         if len(row_buttons) == 3:
             markup.row(*row_buttons)
@@ -108,10 +110,10 @@ def start_time_inline(for_add=0):
     return markup
 
 
-def hours_inline():
+def hours_inline(data="hour"):
     markup = InlineKeyboardMarkup(row_width=3)
-    markup.row(InlineKeyboardButton("1", callback_data="hour|1"), InlineKeyboardButton("2", callback_data="hour|2"),
-               InlineKeyboardButton("3", callback_data="hour|3"))
+    markup.row(InlineKeyboardButton("1", callback_data=f"{data}|1"), InlineKeyboardButton("2", callback_data=f"{data}|2"),
+               InlineKeyboardButton("3", callback_data=f"{data}|3"))
     return markup
 
 
@@ -153,6 +155,13 @@ def yes_no_inline():
     markup = InlineKeyboardMarkup()
     markup.row(InlineKeyboardButton("Ha✅", callback_data="proceed|1"),
                InlineKeyboardButton("Yo'q❌", callback_data="proceed|0"))
+    return markup
+
+
+def owner_or_user():
+    markup = InlineKeyboardMarkup(row_width=2)
+    markup.row(InlineKeyboardButton("Foydalanvchi", callback_data=f"user_type|0"))
+    markup.row(InlineKeyboardButton("Stadion egasi", callback_data=f"user_type|1"))
     return markup
 
 

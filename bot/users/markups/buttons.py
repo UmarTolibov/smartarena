@@ -19,11 +19,15 @@ def number_request():
     return markup
 
 
-def main_menu_markup():
+def main_menu_markup(owner: bool = False):
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.row(KeyboardButton("📆Bron qilish "), KeyboardButton("📅 Buyurtmalarni Ko'rish"))
-    markup.row(KeyboardButton("🏟️Stadionlarim"), KeyboardButton("⚙️Sozlanmalar"))
-    markup.row(KeyboardButton("ℹ️Yordam"))
+    if owner:
+        markup.row(KeyboardButton("📆Bron qilish "), KeyboardButton("📅 Buyurtmalarni Ko'rish"))
+        markup.row(KeyboardButton("🏟️Stadionlarim"), KeyboardButton("⚙️Sozlanmalar"))
+        markup.row(KeyboardButton("ℹ️Yordam"))
+    else:
+        markup.row(KeyboardButton("📆Bron qilish "), KeyboardButton("📅 Buyurtmalarni Ko'rish"))
+        markup.row(KeyboardButton("⚙️Sozlanmalar"), KeyboardButton("ℹ️Yordam"))
     return markup
 
 
@@ -50,7 +54,7 @@ def your_stadiums_markup():
 
 def back():
     markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-    markup.row(KeyboardButton("🔙Orqaga"),KeyboardButton("🔙Bosh sahifa"))
+    markup.row(KeyboardButton("🔙Orqaga"), KeyboardButton("🔙Bosh sahifa"))
     return markup
 
 

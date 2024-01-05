@@ -67,6 +67,7 @@ class SignUpModel(BaseModel):
     email: EmailStr
     password: constr(min_length=6)
     is_staff: Optional[bool]
+    is_owner: Optional[bool]
     is_active: Optional[bool]
     email_var: Optional[int] = None
 
@@ -79,6 +80,7 @@ class SignUpModel(BaseModel):
                 "email": "a@gmail.com",
                 "password": "@#$%^&&&&&^%$",
                 "is_staff": False,
+                "is_owner": False,
                 "is_active": False
             }
         }

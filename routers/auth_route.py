@@ -27,6 +27,7 @@ async def signup(user_data: SignUpModel, db: AsyncSession = Depends(get_db)):
             number : str,
             password : str,
             is_staff : bool,
+            is_owner : bool,
             is_active : bool
 
         ```
@@ -49,6 +50,7 @@ async def signup(user_data: SignUpModel, db: AsyncSession = Depends(get_db)):
         number=user_data.number,
         password=generate_password_hash(user_data.password),
         is_active=user_data.is_active,
+        is_owner=user_data.is_owner,
         is_staff=user_data.is_staff
     )
     db.add(new_user)
