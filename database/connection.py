@@ -8,7 +8,7 @@ from .models import AvailableHour, Order
 
 pg = "postgresql+asyncpg://<db_username>:<db_secret>@<db_host>:<db_port>/<db_name>"
 slite = "sqlite+aiosqlite:///database/db.sqlite3"
-
+mysql = "mysql+aiomysql://sql:$Money04@localhost/smartarena"
 engine = create_async_engine(slite, connect_args={"check_same_thread": False}, poolclass=AsyncAdaptedQueuePool)
 Session = async_sessionmaker(engine)
 
