@@ -164,6 +164,14 @@ def stadiums_choose(stadiums):
     return markup
 
 
+def booked_stadiums_choose(stadiums):
+    markup = InlineKeyboardMarkup(row_width=2)
+    row_buttons = []
+    for stadium in stadiums:
+        markup.add(InlineKeyboardButton(stadium[0], callback_data=f"book|{stadium[1]}"))
+    return markup
+
+
 def manage_stadium(s_id):
     markup = InlineKeyboardMarkup()
     name = InlineKeyboardButton("Nom✏️", callback_data=f"manage|name|{s_id}")

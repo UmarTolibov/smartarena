@@ -3,7 +3,7 @@ from sqlalchemy.orm import aliased
 from telebot.types import Message, ReplyKeyboardRemove, CallbackQuery, InputMediaPhoto
 
 from bot.loader import bot, user_sts
-from database import Stadium, Order, Session, User
+from database import Stadium, Order, Session, User, UserSessions
 from .markups.buttons import *
 from .markups.inline_buttons import *
 
@@ -12,12 +12,47 @@ from .markups.inline_buttons import *
 async def book_stadium(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
+    async with Session() as db:
+        user_q = select(UserSessions.user_id).where(UserSessions.telegram_id == user_id)
+        user = (await db.execute(user_q)).scalar()
+        stadium_q = select(Stadium).join(Order, Stadium.id == Order.stadium_id).where(Order.user_id == user)
+        stadium = (await db.execute(stadium_q)).scalars().all()
+
+    if len(stadium) == 0:
+        await bot.send_message(chat_id, "Bron qilish", reply_markup=back())
+        await bot.send_message(chat_id, "Viloyatni tanlang", reply_markup=regions_inline())
+        await bot.set_state(user_id, user_sts.region, chat_id)
+    else:
+        stadiums = []
+        for i in stadium:
+            if (i.name, i.id) not in stadiums:
+                stadiums.append((i.name, i.id))
+        async with bot.retrieve_data(user_id, chat_id) as data:
+            data["last_books"] = stadiums
+        await bot.send_message(chat_id, "Bron qilish", reply_markup=quickbook_simplebook())
+
+
+# regexp="Bron qilish📆"
+async def simple_book_stadium(message: Message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id
     await bot.send_message(chat_id, "Bron qilish", reply_markup=back())
     await bot.send_message(chat_id, "Viloyatni tanlang", reply_markup=regions_inline())
     await bot.set_state(user_id, user_sts.region, chat_id)
 
 
-# func=lambda call: "region" in call.data.split('|')
+# regexp="Oldingi bronlar📆"
+async def quick_book_stadium(message: Message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id
+    async with bot.retrieve_data(user_id, chat_id) as data:
+        markup = booked_stadiums_choose(data["last_books"])
+    await bot.send_message(chat_id, "Bronlar", reply_markup=back())
+    await bot.send_message(chat_id, "Stadionni tanlang!", reply_markup=markup)
+    await bot.set_state(user_id, user_sts.preview, chat_id)
+
+
+# func=lambda call: "region" in call.data.split('|'), state=user_sts.region
 async def region_choose(call: CallbackQuery):
     from utils.config import regions_file_path
 
@@ -32,10 +67,11 @@ async def region_choose(call: CallbackQuery):
         data["region_name"] = region['name']
     sent = await bot.send_message(chat_id, f"{region['name']}")
     await bot.delete_message(chat_id, sent.message_id)
+    await bot.set_state(user_id, user_sts.district, chat_id)
     await bot.edit_message_text("Tumanni tanlang", chat_id, call.message.message_id, reply_markup=markup)
 
 
-# func=lambda call: "district" in call.data.split('|')
+# func=lambda call: "district" in call.data.split('|'), state=user_sts.district
 async def district_choose(call: CallbackQuery):
     from utils.config import regions_file_path
     chat_id = call.message.chat.id
@@ -47,10 +83,11 @@ async def district_choose(call: CallbackQuery):
         with open(regions_file_path, "r", encoding="utf-8") as file:
             district = json.load(file)["districts"][district_id - 15]
             data["district_name"] = district['name']
+    await bot.set_state(user_id, user_sts.date, chat_id)
     await bot.edit_message_text("Sanani Tanlang", chat_id, call.message.message_id, reply_markup=markup)
 
 
-# func=lambda call: "date" in call.data.split("|")
+# func=lambda call: "date" in call.data.split("|"),state=user_sts.date
 async def date_choose(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -58,10 +95,11 @@ async def date_choose(call: CallbackQuery):
     markup = start_time_inline()
     async with bot.retrieve_data(user_id, chat_id) as data:
         data["date"] = date
+    await bot.set_state(user_id, user_sts.start_time, chat_id)
     await bot.edit_message_text("Boshlash vaqti", chat_id, call.message.message_id, reply_markup=markup)
 
 
-# func=lambda call: "start_time" in call.data.split('|')
+# func=lambda call: "start_time" in call.data.split('|'),state=user_sts.start_time
 async def start_time_choose(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -69,10 +107,11 @@ async def start_time_choose(call: CallbackQuery):
     markup = hours_inline()
     async with bot.retrieve_data(user_id, chat_id) as data:
         data["start_time"] = start_time
+    await bot.set_state(user_id, user_sts.hour, chat_id)
     await bot.edit_message_text("Nechchi soat", chat_id, call.message.message_id, reply_markup=markup)
 
 
-# func=lambda call: "hour" in call.data.split('|'),is_admin=False
+# func=lambda call: "hour" in call.data.split('|'),is_admin=False, state=user_sts.hour
 async def hour_choose(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -108,13 +147,15 @@ async def hour_choose(call: CallbackQuery):
         result = await session.execute(query)
         stadiums = result.scalars().all()
         if stadiums is None or len(stadiums) == 0:
-            await bot.send_message(chat_id, "Berilgan filterlar boyicha stadionlar mavjud emas yoki Band!", reply_markup=markup)
+            await bot.send_message(chat_id, "Berilgan filterlar boyicha stadionlar mavjud emas yoki Band!",
+                                   reply_markup=markup)
         else:
+            await bot.set_state(user_id, user_sts.preview, chat_id)
             await bot.send_message(chat_id, "Stadionlar", reply_markup=markup)
             await bot.send_message(chat_id, "Tanlang", reply_markup=stadiums_inline(stadiums))
 
 
-# func=lambda call: "book" in call.data.split("|")
+# func=lambda call: "book" in call.data.split("|"),state=user_sts.preview
 async def stadium_preview(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -137,12 +178,13 @@ async def stadium_preview(call: CallbackQuery):
         images = []
         for i in image_urls:
             images.append(InputMediaPhoto(i))
+        await bot.set_state(user_id, user_sts.loc_book, chat_id)
         await bot.send_media_group(chat_id, images)
         await bot.send_message(chat_id, message, parse_mode="html", reply_markup=book_inline())
         await bot.answer_callback_query(call.id, f"stadion {stadium.name}")
 
 
-# func=lambda call: call.data in ["book_now", "send_location"],is_admin=False
+# func=lambda call: call.data in ["book_now", "send_location"],is_admin=False,state=user_sts.loc_book
 async def location_book(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -191,4 +233,5 @@ async def location_book(call: CallbackQuery):
         await bot.answer_callback_query(call.id, f"Lokatsiya")
         async with bot.retrieve_data(user_id, chat_id) as bdata:
             location = bdata["location"]
+        await bot.set_state(user_id, user_sts.loc_book, chat_id)
         await bot.send_location(chat_id, **location, reply_markup=book_inline(True))

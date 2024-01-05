@@ -1,10 +1,21 @@
 import random
+import re
 from email.message import EmailMessage
 import aiosmtplib
 from sqlalchemy.sql import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import Session, engine, Config, Base
+
+
+def check_phone_number(phone_number):
+    pattern = re.compile(r'^\+998\d{9}$')
+    return bool(pattern.match(phone_number))
+
+
+def check_email(email):
+    pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    return bool(pattern.match(email))
 
 
 async def send_email(user, email_var: bool = True):
@@ -146,5 +157,3 @@ async def get_jwt_key():
             result = await session.execute(q)
             print(result)
             return result
-
-

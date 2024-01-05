@@ -12,12 +12,24 @@ class Auth(StatesGroup):
     login_password = State()
 
 
+class NeutralState():
+    init = State()
+
+
 class UserState(StatesGroup):
+    init = State()
     main = State()
     region = State()
+    district = State()
+    date = State()
+    start_time = State()
+    hour = State()
+    preview = State()
+    loc_book = State()
 
 
 class SuperUserState(StatesGroup):
+    init = State()
     menu = State()
 
 
@@ -62,4 +74,8 @@ class Settings(StatesGroup):
 
 
 class Help(StatesGroup):
+    init = State()
+
+
+class Book(StatesGroup):
     init = State()

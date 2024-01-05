@@ -4,6 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.exc import IntegrityError
 from bot.loader import bot, auth_sts, user_sts
 from database import User, UserSessions
+from utils.utils import check_phone_number
 from .markups import confirmation
 from .markups.buttons import *
 from database.connection import Session
@@ -35,10 +36,15 @@ async def number_handler(message: Message):
     user_id = message.from_user.id
     async with bot.retrieve_data(user_id, chat_id) as data:
         data["number"] = message.text if message.content_type == "text" else message.contact.phone_number
+    if check_phone_number(message.text) and message.content_type == "text":
 
-    await bot.send_message(chat_id, "Akountingiz uchun parolni kiriting", reply_to_message_id=message.message_id,
-                           reply_markup=ReplyKeyboardRemove())
-    await bot.set_state(user_id, auth_sts.password, chat_id)
+        await bot.send_message(chat_id, "Akountingiz uchun parolni kiriting", reply_to_message_id=message.message_id,
+                               reply_markup=ReplyKeyboardRemove())
+        await bot.set_state(user_id, auth_sts.password, chat_id)
+    else:
+        await bot.send_message(chat_id,
+                               "Noto'g'ri raqam kiritdingiz!\nTo'gri raqam formati: <b>+998901234567</b>\nqaytadan urinib ko'ring",
+                               parse_mode="html", reply_to_message_id=message.message_id)
 
 
 # content_types=["text"], state=auth_sts.password
@@ -132,7 +138,7 @@ async def login_username(message: Message):
 
 
 # content_types=["text"], state=auth_sts.login_password,is_admin=False
-async def _login_password(message: Message):
+async def login_password_(message: Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
     password = message.text

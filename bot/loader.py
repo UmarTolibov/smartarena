@@ -1,12 +1,15 @@
+import logging
+
 import telebot.types
 from sqlalchemy import select
-from telebot.async_telebot import AsyncTeleBot
+from telebot.async_telebot import AsyncTeleBot, logger
 from telebot.asyncio_storage import StateMemoryStorage
 from telebot import asyncio_filters
 from telebot.types import Update, BotCommand
 
 from database import Session, User, UserSessions
-from .states import Auth, UserState, StadiumState, ManageStadiums, MyBookings, Settings, Help, SuperUserState
+from .states import Auth, UserState, StadiumState, ManageStadiums, MyBookings, Settings, Help, SuperUserState, \
+    NeutralState
 from .antiflood import SimpleMiddleware, HandleException
 from utils import TOKEN
 
@@ -38,14 +41,14 @@ class IsAdmin(asyncio_filters.SimpleCustomFilter):
     async def check(self, message):
         user_id = message.from_user.id
         chat_id = message.chat.id if type(message) != telebot.types.CallbackQuery else message.message.chat.id
-        print(user_id, chat_id)
         try:
+            # await bot.set_state(user_id, NeutralState().init, chat_id)
             async with bot.retrieve_data(user_id, chat_id) as data:
                 if data and "is_admin" in data:
                     return data["is_admin"]
 
         except KeyError as e:
-            print(e)
+            logger.log(2,"No value id_admin" + e.__str__(), e.args)
         try:
             async with Session() as db:
                 admin_q = select(User.is_staff).join(UserSessions, User.id == UserSessions.user_id).where(
@@ -56,10 +59,9 @@ class IsAdmin(asyncio_filters.SimpleCustomFilter):
                         data["is_admin"] = admin
                     return admin
         except IndexError as e:
-            print(56, e)
+            print(58, e)
         except Exception as e:
-            print(61, e)
-        print("filtered")
+            print(60, e)
         return False
 
 

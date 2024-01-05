@@ -7,6 +7,12 @@ def login_signup():
     return markup
 
 
+def quickbook_simplebook():
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add(KeyboardButton("Bron qilish📆"), KeyboardButton("Oldingi bronlar📆"))
+    return markup
+
+
 def number_request():
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add(KeyboardButton("Kantaktni yuborish☎️", request_contact=True))
@@ -43,9 +49,8 @@ def your_stadiums_markup():
 
 
 def back():
-    markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.row(KeyboardButton("🔙Orqaga"))
-    markup.row(KeyboardButton("🔙Bosh sahifa"))
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+    markup.row(KeyboardButton("🔙Orqaga"),KeyboardButton("🔙Bosh sahifa"))
     return markup
 
 
