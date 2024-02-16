@@ -1,4 +1,6 @@
 /venv
 /.idea
 /__pycache__
-/regions.zip
+regions.zip
+Spacefile
+tree.txt
