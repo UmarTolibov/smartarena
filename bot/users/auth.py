@@ -10,7 +10,7 @@ from .markups.buttons import *
 from database.connection import Session
 
 
-# regexp="Ro'yxatdan o'tish🗒", state=auth_sts.init
+@bot.message_handler(regexp="Ro'yxatdan o'tish🗒", state=auth_sts.init)
 async def signup_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -19,7 +19,7 @@ async def signup_handler(message: Message):
     await bot.set_state(user_id, auth_sts.name, chat_id)
 
 
-# content_types=["text"], state=auth_sts.name
+@bot.message_handler(content_types=["text"], state=auth_sts.name)
 async def name_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -30,14 +30,14 @@ async def name_handler(message: Message):
     await bot.set_state(user_id, auth_sts.number, chat_id)
 
 
-# content_types=["text", "contact"], state=auth_sts.number
+@bot.message_handler(content_types=["text", "contact"], state=auth_sts.number)
 async def number_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
+    number = message.text if message.content_type == "text" else message.contact.phone_number
     async with bot.retrieve_data(user_id, chat_id) as data:
-        data["number"] = message.text if message.content_type == "text" else message.contact.phone_number
-    if check_phone_number(message.text) and message.content_type == "text":
-
+        data["number"] = number
+    if check_phone_number(number):
         await bot.send_message(chat_id, "Akountingiz uchun parolni kiriting", reply_to_message_id=message.message_id,
                                reply_markup=ReplyKeyboardRemove())
         await bot.set_state(user_id, auth_sts.password, chat_id)
@@ -47,7 +47,7 @@ async def number_handler(message: Message):
                                parse_mode="html", reply_to_message_id=message.message_id)
 
 
-# content_types=["text"], state=auth_sts.password
+@bot.message_handler(content_types=["text"], state=auth_sts.password)
 async def password_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -65,6 +65,7 @@ async def password_handler(message: Message):
 
 
 # , func=lambda x: True, state=auth_sts.confirm
+@bot.callback_query_handler(func=lambda x: True, state=auth_sts.confirm)
 async def confirmation_inline(callback: CallbackQuery):
     chat_id = callback.message.chat.id
     user_id = callback.from_user.id
@@ -110,6 +111,7 @@ async def confirmation_inline(callback: CallbackQuery):
 
 
 # regexp="Kirish↙️", state=auth_sts.init
+@bot.message_handler(regexp="Kirish↙️", state=auth_sts.init)
 async def login_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -119,6 +121,7 @@ async def login_handler(message: Message):
 
 
 # content_types=["text"], state=auth_sts.username
+@bot.message_handler(content_types=["text"], state=auth_sts.username)
 async def login_username(message: Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -138,6 +141,7 @@ async def login_username(message: Message):
 
 
 # content_types=["text"], state=auth_sts.login_password,is_admin=False
+@bot.message_handler(content_types=["text"], state=auth_sts.login_password, is_admin=False)
 async def login_password_(message: Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -169,6 +173,7 @@ async def login_password_(message: Message):
 
 
 # commands=["logout"], state='*'
+@bot.message_handler(commands=["logout"], state='*')
 async def logout_handler(message: Message):
     user_id = message.from_user.id
     chat_id = message.chat.id

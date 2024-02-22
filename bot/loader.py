@@ -1,15 +1,12 @@
-import logging
-
 import telebot.types
 from sqlalchemy import select
 from telebot.async_telebot import AsyncTeleBot, logger
 from telebot.asyncio_storage import StateMemoryStorage
 from telebot import asyncio_filters
-from telebot.types import Update, BotCommand
+from telebot.types import BotCommand
 
 from database import Session, User, UserSessions
-from .states import Auth, UserState, StadiumState, ManageStadiums, MyBookings, Settings, Help, SuperUserState, \
-    NeutralState
+from .states import Auth, UserState, StadiumState, ManageStadiums, MyBookings, Settings, Help, SuperUserState
 from .antiflood import SimpleMiddleware, HandleException
 from utils import TOKEN
 
@@ -40,7 +37,7 @@ class IsAdmin(asyncio_filters.SimpleCustomFilter):
 
     async def check(self, message):
         user_id = message.from_user.id
-        chat_id = message.chat.id if type(message) != telebot.types.CallbackQuery else message.message.chat.id
+        chat_id = message.chat.id if type(message) is not telebot.types.CallbackQuery else message.message.chat.id
         try:
             # await bot.set_state(user_id, NeutralState().init, chat_id)
             async with bot.retrieve_data(user_id, chat_id) as data:
@@ -48,7 +45,7 @@ class IsAdmin(asyncio_filters.SimpleCustomFilter):
                     return data["is_admin"]
 
         except KeyError as e:
-            logger.log(2,"No value id_admin" + e.__str__(), e.args)
+            logger.log(2, "No value id_admin" + e.__str__(), e.args)
         try:
             async with Session() as db:
                 admin_q = select(User.is_staff).join(UserSessions, User.id == UserSessions.user_id).where(
@@ -67,10 +64,9 @@ class IsAdmin(asyncio_filters.SimpleCustomFilter):
 
 bot.add_custom_filter(IsAdmin())
 
-
-async def response_to_update(update: Update):
-    message = update.message
-    callback = update.callback_query
+# async def response_to_update(update: Update):
+#     message = update.message
+#     callback = update.callback_query
 
 #    BotCommand("add_stadium", "to get specific order"),
 #    BotCommand("get_stadium", "to get specific order"),

@@ -6,7 +6,7 @@ from .markups.buttons import *
 from .markups.inline_buttons import *
 
 
-# regexp="🛠️Stadionlarimni boshqarish",state=stadium_sts.init
+@bot.message_handler(regexp="🛠️Stadionlarimni boshqarish", state=stadium_sts.init)
 async def manage_stadium_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -19,7 +19,7 @@ async def manage_stadium_handler(message: Message):
     await bot.set_state(user_id, manage_sts.choose_stadium, chat_id)
 
 
-# func=lambda call: "stadium" in call.data.split("|"),state=manage_sts.choose_stadium
+@bot.callback_query_handler(func=lambda call: "stadium" in call.data.split("|"), state=manage_sts.choose_stadium)
 async def stadium_to_manage(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -48,11 +48,10 @@ async def stadium_to_manage(call: CallbackQuery):
         await bot.answer_callback_query(call.id, "yangilash")
 
 
-# func=lambda call: True,state=manage_sts.edit
+@bot.callback_query_handler(func=lambda call: True, state=manage_sts.edit)
 async def delete_stadium(call: CallbackQuery):
     if call.data.split("|")[1] == "delete":
         chat_id = call.message.chat.id
-        user_id = call.from_user.id
         stadium_id = int(call.data.split("|")[2])
         async with Session.begin() as db:
             query = delete(Stadium).where(Stadium.id == stadium_id)
@@ -63,7 +62,7 @@ async def delete_stadium(call: CallbackQuery):
             await bot.delete_message(chat_id, call.message.message_id)
 
 
-# func=lambda call: True,state=manage_sts.edit
+@bot.callback_query_handler(func=lambda call: True, state=manage_sts.edit)
 async def refresh_stadium(call: CallbackQuery):
     if call.data.split("|")[1] == "refresh":
         chat_id = call.message.chat.id
@@ -98,7 +97,9 @@ async def refresh_stadium(call: CallbackQuery):
                 data["sent_message"] = sent_message.message_id
 
 
-# func=lambda call: call.data.split("|")[1] in ["name", "desc", "image_urls","price", "otime", "ctime", "reg","disc", "location"],state=manage_sts.edit
+@bot.callback_query_handler(
+    func=lambda call: call.data.split("|")[1] in ["name", "desc", "image_urls", "price", "otime", "ctime", "reg",
+                                                  "disc", "location"], state=manage_sts.edit)
 async def edit_stadium_data(call: CallbackQuery):
     print(call.data + "_+" * 23)
 
@@ -150,7 +151,7 @@ async def edit_stadium_data(call: CallbackQuery):
             data["sent_message_id"] = sent.message_id
 
 
-# content_types=["text"],state=manage_sts.name
+@bot.message_handler(content_types=["text"], state=manage_sts.name)
 async def stadium_edit_name_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -168,7 +169,7 @@ async def stadium_edit_name_handler(message: Message):
     await bot.delete_message(chat_id, sent.message_id)
 
 
-# content_types=["text"],state=manage_sts.description
+@bot.message_handler(content_types=["text"], state=manage_sts.description)
 async def stadium_desc_edit_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -186,7 +187,7 @@ async def stadium_desc_edit_handler(message: Message):
     await bot.delete_message(chat_id, sent.message_id)
 
 
-# content_types=["location"],state=manage_sts.location
+@bot.message_handler(content_types=["location"], state=manage_sts.location)
 async def stadium_edit_location_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -204,7 +205,7 @@ async def stadium_edit_location_handler(message: Message):
     await bot.delete_message(chat_id, sent.message_id)
 
 
-# content_types=["photo", "text"],state=manage_sts.image
+@bot.message_handler(content_types=["photo", "text"], state=manage_sts.image)
 async def stadium_edit_image_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -225,7 +226,7 @@ async def stadium_edit_image_handler(message: Message):
         await bot.delete_message(chat_id, sent.message_id)
 
 
-# content_types=["text"],state=manage_sts.price
+@bot.message_handler(content_types=["text"], state=manage_sts.price)
 async def stadium_edit_price_handler(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -243,7 +244,7 @@ async def stadium_edit_price_handler(message: Message):
         await bot.delete_message(chat_id, sent.message_id)
 
 
-# func=lambda call: "s_time" in call.data.split("|"),state=manage_sts.open_time
+@bot.callback_query_handler(func=lambda call: "s_time" in call.data.split("|"), state=manage_sts.open_time)
 async def stadium_edit_open_time_handler(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -261,7 +262,7 @@ async def stadium_edit_open_time_handler(call: CallbackQuery):
         await bot.delete_message(chat_id, sent.message_id)
 
 
-# func=lambda call: "c_time" in call.data.split("|"),state=manage_sts.close_time
+@bot.callback_query_handler(func=lambda call: "c_time" in call.data.split("|"), state=manage_sts.close_time)
 async def stadium_edit_close_time_handler(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -280,7 +281,7 @@ async def stadium_edit_close_time_handler(call: CallbackQuery):
         await bot.delete_message(chat_id, sent.message_id)
 
 
-# func=lambda call: "add_region" in call.data.split('|'),state=manage_sts.region
+@bot.callback_query_handler(func=lambda call: "add_region" in call.data.split('|'), state=manage_sts.region)
 async def stadium_edit_region_handler(call: CallbackQuery):
     from utils.config import regions_file_path
     chat_id = call.message.chat.id
@@ -304,7 +305,7 @@ async def stadium_edit_region_handler(call: CallbackQuery):
         await bot.delete_message(chat_id, sent.message_id)
 
 
-# func=lambda call: "add_district" in call.data.split('|'),state=manage_sts.district
+@bot.callback_query_handler(func=lambda call: "add_district" in call.data.split('|'), state=manage_sts.district)
 async def edit_district_choose(call: CallbackQuery):
     from utils.config import regions_file_path
     chat_id = call.message.chat.id

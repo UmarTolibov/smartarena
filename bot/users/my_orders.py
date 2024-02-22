@@ -6,7 +6,7 @@ from .markups.buttons import *
 from .markups.inline_buttons import *
 
 
-# regexp="📅 Buyurtmalarni Ko'rish"
+@bot.message_handler(regexp="📅 Buyurtmalarni Ko'rish")
 async def my_booking_stadium(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -14,7 +14,7 @@ async def my_booking_stadium(message: Message):
     await bot.set_state(user_id, booking_sts.init, chat_id)
 
 
-# regexp="🔜 Kelayotgan buyurtmalar", state=booking_sts.init
+@bot.message_handler(regexp="🔜 Kelayotgan buyurtmalar", state=booking_sts.init)
 async def upcoming_bookings(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -45,7 +45,7 @@ async def upcoming_bookings(message: Message):
     await bot.set_state(user_id, booking_sts.init, chat_id)
 
 
-# regexp="📆 Buyurtmalar tarixi", state=booking_sts.init
+@bot.message_handler(regexp="📆 Buyurtmalar tarixi", state=booking_sts.init)
 async def booking_history(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id

@@ -6,10 +6,10 @@ from sqlalchemy import event
 
 from .models import AvailableHour, Order
 
-pg = "postgresql+asyncpg://<db_username>:<db_secret>@<db_host>:<db_port>/<db_name>"
-slite = "sqlite+aiosqlite:///database/db.sqlite3"
+pg = "postgresql+asyncpg://postgres:getout04@localhost:5432/postgres"
+slite = {"url": "sqlite+aiosqlite:///database/db.sqlite3", "connect_args": {"check_same_thread": False}}
 mysql = "mysql+aiomysql://sql:$Money04@localhost/smartarena"
-engine = create_async_engine(slite, connect_args={"check_same_thread": False}, poolclass=AsyncAdaptedQueuePool)
+engine = create_async_engine(pg, poolclass=AsyncAdaptedQueuePool)
 Session = async_sessionmaker(engine)
 
 

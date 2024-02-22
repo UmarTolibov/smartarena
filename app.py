@@ -8,11 +8,13 @@ from fastapi.responses import JSONResponse
 from telebot.async_telebot import logger
 from telebot.types import Update
 
+from bot.users import user_init
+from bot.superusers import super_init
 from database import populate_enums
 from utils import description, MeasureResponseTimeMiddleware
 from routers import *
 from utils import WEBHOOK_URL, TOKEN
-from bot import bot, bot_meta, user_register_handlers, superuser_register_handlers
+from bot import *
 
 app = FastAPI()
 app.include_router(auth_router)
@@ -22,8 +24,8 @@ app.include_router(stadium_router)
 app.middleware("http")(MeasureResponseTimeMiddleware(app))
 
 
-@app.get("/", status_code=200, include_in_schema=False)
-async def main():
+@app.get('/', include_in_schema=False)
+def main():
     return encoders.jsonable_encoder({"name": "API", "status": "ok"})
 
 
@@ -38,8 +40,8 @@ async def on_startup():
         await bot_meta()
         if not await bot.set_webhook(url=WEBHOOK_URL):
             raise RuntimeError("unable to set webhook")
-    await superuser_register_handlers()
-    await user_register_handlers()
+    await user_init()
+    await super_init()
 
 
 @app.post(f"/webhook/{TOKEN}/", include_in_schema=False)

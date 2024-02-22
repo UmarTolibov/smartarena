@@ -13,7 +13,7 @@ from database import Session, User, UserSessions, Stadium, Order
 from ..users.markups import login_signup, your_stadiums_markup, back, stadiums_inline, book_inline
 
 
-# commands=["start"], is_admin=True
+@bot.message_handler(commands=["start"], is_admin=True)
 async def greeting_admin(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -33,7 +33,7 @@ async def greeting_admin(message: Message):
                 data["user_id"] = user_check[0][1]
 
 
-# func=lambda call: "account" in call.data.split("|"), is_admin=True
+@bot.callback_query_handler(func=lambda call: "account" in call.data.split("|"), is_admin=True)
 async def choose_account_handler(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -48,7 +48,7 @@ async def choose_account_handler(call: CallbackQuery):
             return
 
 
-# content_types=["text"],state=auth_sts.login_password, is_admin=True
+@bot.message_handler(content_types=["text"], state=auth_sts.login_password, is_admin=True)
 async def admin_login_password(message: Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -79,7 +79,8 @@ async def admin_login_password(message: Message):
                     data["attempts"] = 0
 
 
-# func=lambda call: call.data in ("confirm", "reject"), state=stadium_sts.confirm,is_admin=True
+@bot.callback_query_handler(func=lambda call: call.data in ("confirm", "reject"), state=stadium_sts.confirm,
+                            is_admin=True)
 async def ad_stadium_confirmation_handler(callback: CallbackQuery):
     chat_id = callback.message.chat.id
     user_id = callback.from_user.id
@@ -107,7 +108,7 @@ async def ad_stadium_confirmation_handler(callback: CallbackQuery):
         await bot.set_state(user_id, stadium_sts.name, chat_id)
 
 
-# func=lambda call: "proceed" in call.data.split("|"), is_admin=True
+@bot.callback_query_handler(func=lambda call: "proceed" in call.data.split("|"), is_admin=True)
 async def admin_proceed_yes_no(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -122,7 +123,7 @@ async def admin_proceed_yes_no(call: CallbackQuery):
         await bot.send_message(chat_id, "Bosh sahifa", reply_markup=main_menu_markup())
 
 
-# func=lambda call: "hour" in call.data.split('|'), is_admin=True
+@bot.callback_query_handler(func=lambda call: "hour" in call.data.split('|'), is_admin=True)
 async def admin_hour_choose(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -161,7 +162,7 @@ async def admin_hour_choose(call: CallbackQuery):
         await bot.send_message(chat_id, "Tanlang", reply_markup=stadiums_inline(stadiums))
 
 
-# func=lambda call: call.data in ["book_now", "send_location"], is_admin=True
+@bot.callback_query_handler(func=lambda call: call.data in ["book_now", "send_location"], is_admin=True)
 async def admin_location_book(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id

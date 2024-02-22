@@ -12,7 +12,7 @@ class Auth(StatesGroup):
     login_password = State()
 
 
-class NeutralState():
+class NeutralState(StatesGroup):
     init = State()
 
 

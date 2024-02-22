@@ -3,9 +3,8 @@ from telebot.types import Message
 from bot.loader import bot
 
 
-#  regexp="ℹ️Yordam"
-#  commands=['help']
+@bot.message_handler(commands=['help'])
+@bot.message_handler(regexp="ℹ️Yordam")
 async def help_handler(message: Message):
     chat_id = message.chat.id
-    user_id = message.from_user.id
-    await bot.send_message(chat_id, "Yordam yoki buglar haqida ogohlantirish uchun '' ga murojat qiling ")
+    await bot.send_message(chat_id, "Yordam yoki baglar uchun ogohlantirish uchun '' ga murojat qiling ")

@@ -1,6 +1,6 @@
 from sqlalchemy import select, func, exists, and_
 from sqlalchemy.orm import aliased
-from telebot.types import Message, ReplyKeyboardRemove, CallbackQuery, InputMediaPhoto
+from telebot.types import Message, CallbackQuery, InputMediaPhoto
 
 from bot.loader import bot, user_sts
 from database import Stadium, Order, Session, User, UserSessions
@@ -8,7 +8,7 @@ from .markups.buttons import *
 from .markups.inline_buttons import *
 
 
-# , regexp="📆Bron qilish"
+@bot.message_handler(regexp="📆Bron qilish")
 async def book_stadium(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -32,7 +32,7 @@ async def book_stadium(message: Message):
         await bot.send_message(chat_id, "Bron qilish", reply_markup=quickbook_simplebook())
 
 
-# regexp="Bron qilish📆"
+@bot.message_handler(regexp="Bron qilish📆")
 async def simple_book_stadium(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -41,7 +41,7 @@ async def simple_book_stadium(message: Message):
     await bot.set_state(user_id, user_sts.region, chat_id)
 
 
-# regexp="Oldingi bronlar📆"
+@bot.message_handler(regexp="Oldingi bronlar📆")
 async def quick_book_stadium(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -52,7 +52,7 @@ async def quick_book_stadium(message: Message):
     await bot.set_state(user_id, user_sts.preview, chat_id)
 
 
-# func=lambda call: "region" in call.data.split('|'), state=user_sts.region
+@bot.callback_query_handler(func=lambda call: "region" in call.data.split('|'), state=user_sts.region)
 async def region_choose(call: CallbackQuery):
     from utils.config import regions_file_path
 
@@ -71,7 +71,7 @@ async def region_choose(call: CallbackQuery):
     await bot.edit_message_text("Tumanni tanlang", chat_id, call.message.message_id, reply_markup=markup)
 
 
-# func=lambda call: "district" in call.data.split('|'), state=user_sts.district
+@bot.callback_query_handler(func=lambda call: "district" in call.data.split('|'), state=user_sts.district)
 async def district_choose(call: CallbackQuery):
     from utils.config import regions_file_path
     chat_id = call.message.chat.id
@@ -87,7 +87,7 @@ async def district_choose(call: CallbackQuery):
     await bot.edit_message_text("Sanani Tanlang", chat_id, call.message.message_id, reply_markup=markup)
 
 
-# func=lambda call: "date" in call.data.split("|"),state=user_sts.date
+@bot.callback_query_handler(func=lambda call: "date" in call.data.split("|"), state=user_sts.date)
 async def date_choose(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -99,7 +99,7 @@ async def date_choose(call: CallbackQuery):
     await bot.edit_message_text("Boshlash vaqti", chat_id, call.message.message_id, reply_markup=markup)
 
 
-# func=lambda call: "start_time" in call.data.split('|'),state=user_sts.start_time
+@bot.callback_query_handler(func=lambda call: "start_time" in call.data.split('|'), state=user_sts.start_time)
 async def start_time_choose(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -111,7 +111,7 @@ async def start_time_choose(call: CallbackQuery):
     await bot.edit_message_text("Nechchi soat", chat_id, call.message.message_id, reply_markup=markup)
 
 
-# func=lambda call: "hour" in call.data.split('|'),is_admin=False, state=user_sts.hour
+@bot.callback_query_handler(func=lambda call: "hour" in call.data.split('|'), is_admin=False, state=user_sts.hour)
 async def hour_choose(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -155,7 +155,7 @@ async def hour_choose(call: CallbackQuery):
             await bot.send_message(chat_id, "Tanlang", reply_markup=stadiums_inline(stadiums))
 
 
-# func=lambda call: "book" in call.data.split("|"),state=user_sts.preview
+@bot.callback_query_handler(func=lambda call: "book" in call.data.split("|"), state=user_sts.preview)
 async def stadium_preview(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -184,7 +184,8 @@ async def stadium_preview(call: CallbackQuery):
         await bot.answer_callback_query(call.id, f"stadion {stadium.name}")
 
 
-# func=lambda call: call.data in ["book_now", "send_location"],is_admin=False,state=user_sts.loc_book
+@bot.callback_query_handler(func=lambda call: call.data in ["book_now", "send_location"], is_admin=False,
+                            state=user_sts.loc_book)
 async def location_book(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
