@@ -2,7 +2,8 @@ import os
 
 server_url = "https://smartarena-bbff190dd374.herokuapp.com"
 ngorok_url = "https://6374-188-113-208-153.ngrok-free.app"
-TOKEN = "6262727985:AAE3r4pe-71tWcIEUNOTVenxbz49_rOBoxU"
+TOKEN = "6262727985:AAFB-hJoxbSxee6daAsicChdiycqB-GS07Y"
+
 WEBHOOK_PATH = f"/webhook/{TOKEN}/"
 SLI_TOKEN = "gnTHhoTY_GAgN29Beg49BRNybun9uwSqu9HFdYRF6"
 current_dir = os.path.dirname(os.path.abspath(__file__))
