@@ -1,7 +1,7 @@
 from telebot.types import Message
 from bot.loader import bot, user_sts, stadium_sts
 from .markups.buttons import main_menu_markup
-from bot.users.markups import your_stadiums_markup
+from bot.owners.markups import your_stadiums_markup
 
 
 @bot.message_handler(regexp="🔙Bosh sahifa", state="*", is_admin=True)
@@ -19,7 +19,7 @@ async def back(message: Message):
     user_id = message.from_user.id
     state = await bot.get_state(user_id, chat_id)
 
-    if state in ["StadiumState:init", "ManageStadiums:edit"]:
+    if state in ["StadiumState:init", "ManageStadiums:edit", "ManageStadiums:choose_stadium"]:
         await bot.send_message(chat_id, "Stadionlar", reply_markup=your_stadiums_markup())
         await bot.set_state(user_id, stadium_sts.init, chat_id)
 

@@ -30,6 +30,7 @@ class User(Base):
     gender: Mapped[str] = mapped_column(nullable=True)
     password: Mapped[str] = mapped_column(nullable=True)
     is_staff: Mapped[bool] = mapped_column(default=False)
+    is_owner: Mapped[bool] = mapped_column(default=False)
     is_active: Mapped[bool] = mapped_column(default=False)
     lang: Mapped[str] = mapped_column(default="eng")
     email_var: Mapped[int] = mapped_column(default=0)

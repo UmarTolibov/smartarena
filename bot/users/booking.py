@@ -4,8 +4,8 @@ from telebot.types import Message, CallbackQuery, InputMediaPhoto
 
 from bot.loader import bot, user_sts
 from database import Stadium, Order, Session, User, UserSessions
-from .markups.buttons import *
-from .markups.inline_buttons import *
+from bot.users.markups.buttons import *
+from bot.users.markups.inline_buttons import *
 
 
 @bot.message_handler(regexp="📆Bron qilish")
@@ -111,7 +111,8 @@ async def start_time_choose(call: CallbackQuery):
     await bot.edit_message_text("Nechchi soat", chat_id, call.message.message_id, reply_markup=markup)
 
 
-@bot.callback_query_handler(func=lambda call: "hour" in call.data.split('|'), is_admin=False, state=user_sts.hour)
+@bot.callback_query_handler(func=lambda call: "hour" in call.data.split('|'), is_admin=False, is_owner=False,
+                            state=user_sts.hour)
 async def hour_choose(call: CallbackQuery):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -184,7 +185,7 @@ async def stadium_preview(call: CallbackQuery):
         await bot.answer_callback_query(call.id, f"stadion {stadium.name}")
 
 
-@bot.callback_query_handler(func=lambda call: call.data in ["book_now", "send_location"], is_admin=False,
+@bot.callback_query_handler(func=lambda call: call.data in ["book_now", "send_location"], is_admin=False, is_owner=False,
                             state=user_sts.loc_book)
 async def location_book(call: CallbackQuery):
     chat_id = call.message.chat.id

@@ -5,7 +5,7 @@ from telebot.async_telebot import logger
 from telebot.asyncio_handler_backends import BaseMiddleware, CancelUpdate, ContinueHandling
 from telebot.async_telebot import ExceptionHandler
 from telebot.types import Message
-
+from telebot.async_telebot import AsyncTeleBot
 logger.setLevel(logging.ERROR)
 
 
@@ -39,10 +39,11 @@ class SimpleMiddleware(BaseMiddleware):
         self.last_time = {}
         self.limit = limit
         self.update_types = ['message']
-        self.bot = bot
+        self.bot:AsyncTeleBot = bot
 
     async def pre_process(self, message: Message, data):
         chat_id = message.chat.id
+        await self.bot.send_chat_action(message.chat.id, "TYPING")
         message_id = message.message_id
         if message.content_type == "photo":
             return ContinueHandling()

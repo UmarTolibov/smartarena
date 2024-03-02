@@ -64,7 +64,6 @@ async def password_handler(message: Message):
     await bot.set_state(user_id, auth_sts.confirm, chat_id)
 
 
-# , func=lambda x: True, state=auth_sts.confirm
 @bot.callback_query_handler(func=lambda x: True, state=auth_sts.confirm)
 async def confirmation_inline(callback: CallbackQuery):
     chat_id = callback.message.chat.id
@@ -110,7 +109,7 @@ async def confirmation_inline(callback: CallbackQuery):
         await bot.set_state(user_id, auth_sts.name, chat_id)
 
 
-# regexp="Kirish↙️", state=auth_sts.init
+# login
 @bot.message_handler(regexp="Kirish↙️", state=auth_sts.init)
 async def login_handler(message: Message):
     chat_id = message.chat.id
@@ -120,7 +119,6 @@ async def login_handler(message: Message):
     await bot.set_state(user_id, auth_sts.username, chat_id)
 
 
-# content_types=["text"], state=auth_sts.username
 @bot.message_handler(content_types=["text"], state=auth_sts.username)
 async def login_username(message: Message):
     user_id = message.from_user.id
@@ -136,12 +134,13 @@ async def login_username(message: Message):
                 data["username"] = message.text
                 data["attempts"] = 0
                 data["is_admin"] = user.is_staff
+                data["is_owner"] = user.is_owner
+                print(data["is_owner"])
             await bot.send_message(chat_id, "Parolni kiriting!")
             await bot.set_state(user_id, auth_sts.login_password, chat_id)
 
 
-# content_types=["text"], state=auth_sts.login_password,is_admin=False
-@bot.message_handler(content_types=["text"], state=auth_sts.login_password, is_admin=False)
+@bot.message_handler(content_types=["text"], state=auth_sts.login_password, is_admin=False, is_owner=False)
 async def login_password_(message: Message):
     user_id = message.from_user.id
     chat_id = message.chat.id

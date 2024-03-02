@@ -1,17 +1,17 @@
 import os
 
-server_url = "https://smartarena-bbff190dd374.herokuapp.com"
-ngorok_url = "https://6374-188-113-208-153.ngrok-free.app"
+# server_url = "https://smartarena-bbff190dd374.herokuapp.com"
+# ngorok_url = "https://6374-188-113-208-153.ngrok-free.app"
 TOKEN = "6262727985:AAFB-hJoxbSxee6daAsicChdiycqB-GS07Y"
 
-WEBHOOK_PATH = f"/webhook/{TOKEN}/"
-SLI_TOKEN = "gnTHhoTY_GAgN29Beg49BRNybun9uwSqu9HFdYRF6"
+# WEBHOOK_PATH = f"/webhook/{TOKEN}/"
+# SLI_TOKEN = "gnTHhoTY_GAgN29Beg49BRNybun9uwSqu9HFdYRF6"
 current_dir = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(current_dir)
 regions_file_path = os.path.join(BASE_DIR, "regions.json")
-BASE_URL = ngorok_url if BASE_DIR.replace("\\",
-                                          "/") == "C:/Users/User/Documents/GitHub/smartarena" else server_url
-WEBHOOK_URL = BASE_URL + WEBHOOK_PATH
+# BASE_URL = ngorok_url if BASE_DIR.replace("\\",
+#                                           "/") == "C:/Users/User/Documents/GitHub/smartarena" else server_url
+# WEBHOOK_URL = BASE_URL + WEBHOOK_PATH
 
 description = """
 SmartArena API

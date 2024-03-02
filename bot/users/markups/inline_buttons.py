@@ -172,23 +172,3 @@ def booked_stadiums_choose(stadiums):
     return markup
 
 
-def manage_stadium(s_id):
-    markup = InlineKeyboardMarkup()
-    name = InlineKeyboardButton("Nom✏️", callback_data=f"manage|name|{s_id}")
-    desc = InlineKeyboardButton("Ma'lumot✏️", callback_data=f"manage|desc|{s_id}")
-    image = InlineKeyboardButton("Rasmlar✏️", callback_data=f"manage|image_urls|{s_id}")
-    price = InlineKeyboardButton("Narx✏️", callback_data=f"manage|price|{s_id}")
-    opening = InlineKeyboardButton("Ochilish vaqti✏️", callback_data=f"manage|otime|{s_id}")
-    closing = InlineKeyboardButton("Yopilish vaqti✏️", callback_data=f"manage|ctime|{s_id}")
-    region = InlineKeyboardButton("Viloyat✏️", callback_data=f"manage|reg|{s_id}")
-    district = InlineKeyboardButton("Tuman✏️", callback_data=f"manage|disc|{s_id}")
-    location = InlineKeyboardButton("Lokatsiya✏️", callback_data=f"manage|location|{s_id}")
-    refresh = InlineKeyboardButton("Yangilash🔄", callback_data=f"manage|refresh|{s_id}")
-    delete = InlineKeyboardButton("Stadionni o'chirish❌", callback_data=f"manage|del|{s_id}")
-    markup.row(name, desc)
-    markup.row(image, price)
-    markup.row(opening, closing)
-    markup.row(region, district)
-    markup.row(location)
-    markup.row(refresh, delete)
-    return markup

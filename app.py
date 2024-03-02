@@ -6,15 +6,12 @@ from fastapi import FastAPI, routing, encoders, exceptions
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 
-from telebot.async_telebot import logger
-from telebot.types import Update
-
 from bot.users import user_init
 from bot.superusers import super_init
+from bot.owners import owner_init
 from database import populate_enums
 from utils import description, MeasureResponseTimeMiddleware
 from routers import *
-from utils import WEBHOOK_URL, TOKEN
 from bot import *
 
 polling_task = None
@@ -55,6 +52,7 @@ async def on_startup():
     #         raise RuntimeError("unable to set webhook")
     await bot_meta()
     await user_init()
+    await owner_init()
     await super_init()
 
 

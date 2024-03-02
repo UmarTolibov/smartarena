@@ -7,7 +7,7 @@ from .markups.buttons import login_signup, main_menu_markup
 from database import Session, User, UserSessions
 
 
-@bot.message_handler(commands=["start"], is_admin=False)
+@bot.message_handler(commands=["start"], is_admin=False, is_owner=False)
 async def greeting(message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -17,7 +17,7 @@ async def greeting(message: Message):
             user_check_q = select(User.username, User.id).join(UserSessions, User.id == UserSessions.user_id).where(
                 UserSessions.telegram_id == user_id)
             user_check = (await db.execute(user_check_q)).fetchall()
-
+            print("users/start 20", user_check)
         if len(user_check) >= 2:
             markup = accounts_inline(user_check)
             await bot.send_message(chat_id, "Qaysi akkaunt bilan davom ettirmoqchisiz?", reply_markup=markup)
@@ -28,7 +28,7 @@ async def greeting(message: Message):
         async with bot.retrieve_data(user_id, chat_id) as data:
             data["user_id"] = user_check[0][1]
     except Exception as e:
-        print(e)
+        print("users/start 31", e)
         await bot.send_message(chat_id, f"Salom {message.from_user.first_name}", reply_to_message_id=message.message_id,
                                reply_markup=markup)
         await bot.set_state(user_id, auth_sts.init, chat_id)

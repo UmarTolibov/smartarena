@@ -10,7 +10,7 @@ from bot.loader import bot, auth_sts, user_sts, admin_sts, stadium_sts
 from .markups import accounts_inline
 from .markups.buttons import main_menu_markup
 from database import Session, User, UserSessions, Stadium, Order
-from ..users.markups import login_signup, your_stadiums_markup, back, stadiums_inline, book_inline
+from bot.owners.markups import login_signup, your_stadiums_markup, back, stadiums_inline, book_inline
 
 
 @bot.message_handler(commands=["start"], is_admin=True)
@@ -158,8 +158,13 @@ async def admin_hour_choose(call: CallbackQuery):
         # Execute the query asynchronously to get the result
         result = await session.execute(query)
         stadiums = result.scalars().all()
-        await bot.send_message(chat_id, "Stadionlar", reply_markup=markup)
-        await bot.send_message(chat_id, "Tanlang", reply_markup=stadiums_inline(stadiums))
+        if stadiums is None or len(stadiums) == 0:
+            await bot.send_message(chat_id, "Berilgan filterlar boyicha stadionlar mavjud emas yoki Band!",
+                                   reply_markup=markup)
+        else:
+            await bot.set_state(user_id, user_sts.preview, chat_id)
+            await bot.send_message(chat_id, "Stadionlar", reply_markup=markup)
+            await bot.send_message(chat_id, "Tanlang", reply_markup=stadiums_inline(stadiums))
 
 
 @bot.callback_query_handler(func=lambda call: call.data in ["book_now", "send_location"], is_admin=True)

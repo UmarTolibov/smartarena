@@ -33,6 +33,11 @@ class SuperUserState(StatesGroup):
     menu = State()
 
 
+class OwnerState(StatesGroup):
+    init = State()
+    menu = State()
+
+
 class StadiumState(StatesGroup):
     init = State()
     name = State()
