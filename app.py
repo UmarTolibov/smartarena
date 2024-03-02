@@ -1,3 +1,4 @@
+import asyncio
 import inspect
 import logging
 import re
@@ -16,6 +17,13 @@ from routers import *
 from utils import WEBHOOK_URL, TOKEN
 from bot import *
 
+polling_task = None
+
+
+async def start_polling():
+    await bot.infinity_polling()
+
+
 app = FastAPI()
 app.include_router(auth_router)
 app.include_router(order_router)
@@ -32,23 +40,29 @@ def main():
 @app.on_event("startup")
 async def on_startup():
     populate_enums()
-    webhook_info = await bot.get_webhook_info(30)
-    if webhook_info.url != WEBHOOK_URL:
-        logger.debug(
-            f"updating webhook url, old: {webhook_info.url}, new: {WEBHOOK_URL}"
-        )
-        await bot_meta()
-        if not await bot.set_webhook(url=WEBHOOK_URL):
-            raise RuntimeError("unable to set webhook")
+    global polling_task
+    if polling_task is None or polling_task.done():
+        polling_task = asyncio.create_task(start_polling())
+    else:
+        print("Polling task is already running")
+    # webhook_info = await bot.get_webhook_info(30)
+    # if webhook_info.url != WEBHOOK_URL:
+    #     logger.debug(
+    #         f"updating webhook url, old: {webhook_info.url}, new: {WEBHOOK_URL}"
+    #     )
+    #     await bot_meta()
+    #     if not await bot.set_webhook(url=WEBHOOK_URL):
+    #         raise RuntimeError("unable to set webhook")
+    await bot_meta()
     await user_init()
     await super_init()
 
 
-@app.post(f"/webhook/{TOKEN}/", include_in_schema=False)
-async def handle_telegram_message(update: dict):
-    if update:
-        update = Update.de_json(update)
-        await bot.process_new_updates([update])
+# @app.post(f"/webhook/{TOKEN}/", include_in_schema=False)
+# async def handle_telegram_message(update: dict):
+#     if update:
+#         update = Update.de_json(update)
+#         await bot.process_new_updates([update])
 
 
 @app.exception_handler(exceptions.HTTPException)
